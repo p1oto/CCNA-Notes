@@ -96,3 +96,4 @@
 5. **Router**
 6. **Firewall**
 7. **AP (Access Point)**
+8. **Network Card (NIC)**
