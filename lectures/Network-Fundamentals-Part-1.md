@@ -45,11 +45,14 @@
 
 ### الهياكل الفيزيائية للشبكة (Network Topologies):
 
-1. **Bus Topology:**
-   ![Bus Topology](images/bus-topology.png)
-   * **الوصف:** تتصل جميع الأجهزة بكابل رئيسي موحد يسمى `Backbone Cable` وينتهي بطرفيات `Terminators` لمنع انعكاس الإشارة
-   * **المميزات:** سهلة التركيب ومنخفضة التكلفة للشبكات البسيطة جداً
-   * **العيوب:** تمثل نقطة انهيار واحدة (`Single Point of Failure`) في حال انقطاع الكابل الرئيسي، بالإضافة لكثرة حدوث تصادم للبيانات (`Collisions`)
+### 1. Bus Topology
+
+![Bus Topology](images/bus-topology.png)
+
+* **الوصف:** تتصل جميع الأجهزة بكابل رئيسي موحد يسمى `Backbone Cable` وينتهي بطرفيات `Terminators` لمنع انعكاس الإشارة
+* **المميزات:** سهلة التركيب ومنخفضة التكلفة للشبكات البسيطة جداً
+* **العيوب:** تمثل نقطة انهيار واحدة (`Single Point of Failure`) في حال انقطاع الكابل الرئيسي، بالإضافة لكثرة حدوث تصادم للبيانات (`Collisions`)
+
 
 2. **Ring Topology:**
    ![Ring Topology](images/ring-topology.png)
