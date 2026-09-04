@@ -11,15 +11,6 @@ All lecture notes, CLI configurations, and topology breakdowns documented here a
 ## 🎯 Repository Objectives
 
 * **Daily Study Tracking:** Maintaining a consistent learning streak and documenting key concepts.
-* **Hands-on Verification:** Tracking Cisco IOS CLI commands, packet flows, and network troubleshooting steps.
 * **Quick Reference:** Providing an accessible reference for essential networking concepts and configurations.
 
 ---
-
-## 📂 Repository Structure
-
-```text
-CCNA-Notes/
-├── README.md        # Course overview, objectives, and progress
-├── lectures/        # Detailed notes for each lecture (.md)
-└── labs/            # Packet Tracer simulation files (.pkt) & CLI configs
