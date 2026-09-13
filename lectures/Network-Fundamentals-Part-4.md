@@ -38,7 +38,7 @@
   * Router إلى Router
   * PC إلى Router
 
-**3. Rollover Cable (Console Cable):**
+**3. Rollover Cable (Console Cable):** 
 * كابل مخصص لأغراض الإدارة والبرمجة الأولية لأجهزة سيسكو (Management & Configuration)
 * يوصل مباشرة من منفذ الـ Serial / USB في جهاز الكمبيوتر إلى منفذ الـ Console في الـ Switch أو الـ Router
 
