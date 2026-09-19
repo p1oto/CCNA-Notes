@@ -1,30 +1,14 @@
-<div align="center">
+# 🌐 Cisco Certified Network Associate (CCNA 200-301) — Study Notes
 
-  <h1>🌐 CCNA 200-301 Study Hub</h1>
-  <p>Structured, hands-on documentation & technical writeups for the Cisco CCNA 200-301 curriculum.</p>
+A structured documentation repository tracking my daily learning progress and notes for the **Cisco CCNA 200-301** course curriculum.
 
-  <p>
-    <img src="https://img.shields.io/badge/Instructor-Eng.%20Abeer%20Hosni-1f425f?style=for-the-badge&logo=youtube&logoColor=red" alt="Instructor" />
-    <img src="https://img.shields.io/badge/Lectures-83%20Videos-007ACC?style=for-the-badge&logo=cisco&logoColor=white" alt="Lectures" />
-    <img src="https://img.shields.io/badge/Language-Arabic%20Notes-success?style=for-the-badge" alt="Arabic" />
-    <img src="https://img.shields.io/badge/Status-Active%20Study-orange?style=for-the-badge" alt="Status" />
-  </p>
+All lecture notes and core networking concepts documented here are based on the training series delivered by **Eng. Abeer Hosni**.
 
-</div>
+[![YouTube Course Playlist](https://img.shields.io/badge/YOUTUBE-COURSE%20PLAYLIST-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/playlist?list=PLped9VG7STA-SnQv4X9lauBZGH4rW8ICF)
 
 ---
 
-### ⚡ Overview & Learning Approach
-A dedicated space tracking my daily journey through Cisco CCNA, designed with a focus on deep conceptual understanding, network security implications, and practical CLI labs.
+### 🎯 Repository Objectives
 
-* **Daily Commitment:** Minimum 1 lecture per day; dual-session days for shorter video modules to optimize pace.
-* **Hands-on Labs:** Every theoretical chapter is reinforced with `.pkt` (Packet Tracer) topologies under the `labs/` directory.
-* **Security Mindset:** Documenting vulnerabilities, mitigation techniques, and attack surfaces for each protocol (ARP spoofing, DHCP starvation, etc.).
-
----
-
-### 🗂️ Directory Architecture
-
-```text
-├── lectures/       # Structured Markdown study notes
-└── labs/           # Packet Tracer topologies (.pkt) & walkthroughs
+* **Daily Study Tracking:** Maintaining a consistent learning streak and documenting key concepts.
+* **Quick Reference:** Providing an accessible reference for essential networking concepts and configurations.
