@@ -7,7 +7,7 @@ All lecture notes and core networking concepts documented here are based on the 
 [![YouTube Course Playlist](https://img.shields.io/badge/YOUTUBE-COURSE%20PLAYLIST-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/playlist?list=PLped9VG7STA-SnQv4X9lauBZGH4rW8ICF)
 
 ---
-
+  
 ### 🎯 Repository Objectives
 
 * **Daily Study Tracking:** Maintaining a consistent learning streak and documenting key concepts.
