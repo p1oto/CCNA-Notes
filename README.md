@@ -9,6 +9,6 @@ All lecture notes and core networking concepts documented here are based on the 
 ---
   
 ### 🎯 Repository Objectives
-
+ 
 * **Daily Study Tracking:** Maintaining a consistent learning streak and documenting key concepts.
 * **Quick Reference:** Providing an accessible reference for essential networking concepts and configurations.
