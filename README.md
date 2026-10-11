@@ -20,29 +20,3 @@ Study notes for the **Cisco CCNA 200-301** course, written lecture by lecture wi
 | **Playlist** | [![YouTube](https://img.shields.io/badge/YOUTUBE-PLAYLIST-red?style=flat-square&logo=youtube)](https://www.youtube.com/playlist?list=PLujems1WwnRlXvtnHH8aBwkoNoka6ClLG) |
 
 ---
-
-## 🎞️ Lectures
-
-Status: ⬜ not started · 🟨 in progress · ✅ done
-
-| # | Duration | Status | Notes |
-|---|---|---|---|
-| 01 | 1:34:50 | ⬜ | — |
-| 02 | 2:56:45 | ⬜ | — |
-| 03 | 2:52:14 | ⬜ | — |
-| 04 | 3:16:41 | ⬜ | — |
-| 05 | 2:28:53 | ⬜ | — |
-| 06 | 2:35:09 | ⬜ | — |
-| 07 | 2:50:18 | ⬜ | — |
-| 08 | 2:43:13 | ⬜ | — |
-| 09 | 4:06:58 | ⬜ | — |
-| 10 | 1:38:59 | ⬜ | — |
-| 11 | 1:30:30 | ⬜ | — |
-| 12 | 2:00:19 | ⬜ | — |
-| 13 | 2:40:30 | ⬜ | — |
-| 14 | 1:53:14 | ⬜ | — |
-| 15 | 1:20:25 | ⬜ | — |
-| 16 | 2:30:31 | ⬜ | — |
-| 17 | 1:59:16 | ⬜ | — |
-| 18 | 1:30:18 | ⬜ | — |
-| 19 | 1:47:27 | ⬜ | — |
