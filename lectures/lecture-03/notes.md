@@ -1,139 +1,156 @@
-# 03 - OSI Reference Model & TCP/IP Protocol Suite
+# 03 - Network Models (OSI vs TCP/IP)
 
-### 1. مفهوم البروتوكول والحاجة التاريخية للمعيار (Standardization)
-* **تعريف البروتوكول:** لغة التخاطب والقواعد الموحدة التي تتيح لأجهزة الكمبيوتر فهم بعضها البعض عبر الشبكة.
-* **الوضع قبل المعايير الموحدة:** كانت كل شركة تصنع بروتوكولاً خاصاً يعمل فقط على أجهزتها:
-  * شركة `IBM` عام 1974 أنتجت بروتوكول `SNA` (Systems Network Architecture).
-  * شركة `Apple` أنتجت بروتوكول `AppleTalk`.
-  * شركة `Novell` أنتجت بروتوكول `IPX/SPX`.
-  * النتيجة: أجهزة IBM لا تتواصل مع أجهزة Apple أو Novell، مما استدعى وجود معيار عالمي مفتوح وموحد لتتواصل الأنظمة المختلفة (مثل تصفح هاتف أندرويد لموقع مبني على سيرفر لينكس أو ويندوز).
-* **مؤسسات المعايير القياسية (Standards Organizations):**
-  تهدف إلى توحيد معايير الشبكات لتشجيع التوافقية (`Interoperability`)، المنافسة (`Competition`)، والابتكار (`Innovation`) دون الانحياز لشركة معينة (`Vendor-Neutral`). من أبرزها:
-  * `ISOC` (Internet Society): مختصة بكل ما يخص إنشاء وتطوير شبكة الإنترنت وبروتوكولاتها.
-  * `ICANN`: مختصة بتوزيع عناوين الـ IP وأسماء النطاقات.
-  * `IEEE`: مسؤولة عن معايير مثل Ethernet (`802.3`) و Wi-Fi (`802.11`).
-  * `ITU`: منظمة دولية تحدد معايير الاتصالات عالمياً.
-  * `ISO`: المنظمة التي قامت بتطوير نموذج الـ `OSI`.
+### 1. مقدمة: كيف تتفاهم الأجهزة؟ (دستور الشبكات)
+الكمبيوترات لا تفهم الحروف والصور والصوت البشري، بل تفهم الإشارات الكهربائية فقط.
+- **التحويل لغة الآلة:** الموديل (دستور الشبكات) عبارة عن `Software` يقوم بتحويل بيانات البشر إلى لغة الوحايد والأصفار (Binary `0s & 1s`) استناداً إلى جداول عالمية مثل `ASCII Code` (مثال: الحرف يُترجم إلى `8 Bits` أي `1 Byte`).
+- **التحويل لإشارات:** يقوم كارت الشبكة (`Hardware`) بتحويل هذه الأصفار والوحايد إلى نبضات كهربائية (مثال: `5 Volt` للواحد، و `0 Volt` للصفر) لتمشي في الكابلات بسرعة تقارب سرعة الإلكترون.
+- **زمن التأخير (Target Delay):** لضمان جودة الشبكة وعدم حدوث تقطيع في الخدمات المباشرة (`Real-Time` مثل مكالمات الفيديو)، يجب ألا يتجاوز زمن وصول الإشارة من جهاز لآخر **`150 ms` (ملي ثانية)**.
 
 ---
 
-### 2. التسلسل التاريخي لظهور نماذج الشبكات (Model Evolution)
-1. **نموذج وزارة الدفاع الأمريكية الأول (`DoD Model`):**
-   * ظهر عبر وكالة `DARPA` لربط أجهزة الـ Mainframe الكبيرة بين الجامعات ومراكز الأبحاث في ولايات متباعدة عبر شبكة `ARPANET`.
-2. **ظهور نموذج OSI من منظمة ISO:**
-   * تم إنشاؤه كنموذج معياري مفتوح (`Open Systems Interconnection`) يتكون من 7 طبقات (`7 Layers`).
-   * كلمة `Open` تعني أن الكود البرمجي والمعيار متاح ومفتوح لأي شركة لتطويره وتعديله ليعمل على معالجات أجهزتها.
-   * العيب الذي منع انتشاره عملياً: الاعتماد على نظام عنونة معقد يسمى `CLNS` (عناوينه تتراوح بين 6 إلى 20 خانة Hex)، وصعوبة تطبيقه مقارنة بالـ IP العشري البسيط المكون من 4 خانات في ذلك الوقت.
-3. **تطوير واستقرار TCP/IP:**
-   * تم تحديث وإصلاح مشاكل نموذج `DoD` ليصبح نموذج `TCP/IP` المعتمد رسمياً والوحيد العامل على الإنترنت والشبكات في العالم.
-   * نموذج `OSI` لم يعد موجوداً كبرمجيات فعلية على الأجهزة، لكنه يظل النموذج النظري المرجعي الأهم في دراسة الشبكات وتحديد المشاكل وحلها (`Troubleshooting`).
+### 2. تاريخ نماذج الشبكات (Evolution of Network Models)
+- **DoD Model:** أول "دستور" شبكات صممه الجيش الأمريكي قديماً (`Department of Defense`) في الخمسينات لتبادل المعلومات سرياً بين أجهزته.
+- **OSI Model (Open Systems Interconnection):** 
+  نموذج يتكون من **7 طبقات (Layers)**. كان يُستخدم قديماً للربط بين الأجهزة، ولكنه بعد عام 2000 أُحيل للتقاعد وأصبح نموذجاً مرجعياً (`Reference Model`) يُدرس فقط في الأكاديميات لفهم تسلسل مهام الشبكة بالتفصيل، ولا تُبنى عليه الأجهزة الحديثة.
+- **TCP/IP Model:** 
+  هو النموذج التجاري (`Commercial Model`) المُطور من الـ `DoD`، وهو المُستخدم إجبارياً ورسمياً في كل أجهزة العالم حالياً. يتكون من **4 طبقات**، حيث تم فيه دمج عدة طبقات من الـ OSI لتسريع وتبسيط عملية النقل.
+
+<br>
+<div align="center">
+  <img src="image/osi-vs-tcpip.png" width="60%" alt="OSI vs TCP/IP Models" />
+</div>
+<br>
 
 ---
 
-### 3. بنية نموذج OSI وقواعد التفاعل (Layers Interaction)
-* يتكون من 7 طبقات ترقم دائماً من الأسفل إلى الأعلى:
-  * الطبقة 1: `Physical`
-  * الطبقة 2: `Data Link`
-  * الطبقة 3: `Network`
-  * الطبقة 4: `Transport`
-  * الطبقة 5: `Session`
-  * الطبقة 6: `Presentation`
-  * الطبقة 7: `Application`
-* جملة مساعدة للحفظ من أسفل لأعلى: `Please Do Not Throw Sausage Pizza Away`
-* **Adjacent-Layer Interaction:** كل طبقة تستلم البيانات من الطبقة المجاورة لها (أعلى أو أسفل على نفس الجهاز)، تنفذ عملياتها، ثم تمررها للطبقة التالية.
-* **Same-Layer Interaction:** كل طبقة في جهاز المصدر تتفاعل وتتفاهم مع الطبقة المماثلة لها تماماً في الجهاز المستلم عبر معلومات تضاف في الترويسة (`Header`).
-* **تصنيف الطبقات ومستوى معالجة الأجهزة:**
-  * **Upper Layers (الطبقات 7، 6، 5):** تدار بالكامل عبر نظام التشغيل والبرامج (`OS & Software`).
-  * **Lower Layers (الطبقات 4، 3، 2، 1):** مسؤولة عن تدفق ونقل البيانات والبنية التحتية (`Network Infrastructure`)، وهي اختصاص مهندسي الشبكات وسيسكو.
-  * **قاعدة هامة:** عندما نقول أن جهازاً يعمل في `Layer` معينة (مثل الراوتر `Layer 3 Device` أو السويتش `Layer 2 Device`)، فهذا يعني أن الجهاز يفهم تلك الطبقة ويستطيع معالجة جميع الطبقات التي تقع أسفلها أيضاً.
+### 3. طبقات الـ TCP/IP وتغليف البيانات (Data Encapsulation)
+عملية التغليف (`Encapsulation`) تعني أن كل طبقة تمر عليها البيانات تُضيف "رأس/هيدر" (`Header`) خاص بها، وتُغير اسم وحدة القياس (`PDU - Protocol Data Unit`).
+
+#### أ. طبقة التطبيقات (Application Layer)
+- تدمج 3 طبقات من الـ OSI وهي: (Application, Presentation, Session).
+- **الوظيفة:** تحويل البيانات من لغة البشر إلى وحايد وأصفار عبر تطبيقات معينة، مثل:
+  * `HTTP` (للتصفح الآني).
+  * `FTP` (لتحميل ورفع الملفات الضخمة).
+  * وغيرها مثل WhatsApp, Zoom, Uber.
+- **وحدة القياس (PDU):** يُطلق على البيانات في هذه المرحلة اسم **`Data`**.
+
+#### ب. طبقة النقل (Transport Layer)
+- **الوظيفة الأساسية:** تختار بين بروتوكولين لإدارة نقل البيانات:
+  * **`TCP` (للدقة):** يضمن وصول البيانات كاملة بلا أخطاء (للملفات، النصوص، الإيميلات).
+  * **`UDP` (للإنجاز والسرعة):** يركز على السرعة وعدم التأخير حتى لو سقطت بعض البيانات (للبث المباشر، الألعاب، المكالمات).
+- **المهام الثلاثة المشتركة (للـ TCP والـ UDP):**
+  1. **التقطيع (Segmentation):** تقطيع البيانات الكبيرة إلى أجزاء لتسريع النقل، بحيث لا يتجاوز الجزء الصافي من الداتا **`1460 Bytes`**.
+  2. **الترقيم (Sequencing):** إعطاء كل جزء رقم تسلسلي ورقم جلسة (`Session Number`) لمعرفة ترتيبه (مثال: `1/1` أو `1/4`)، والجزء الأخير يأخذ علامة **`FIN`** (أي Finish) ليعلم المستلم أن الملف انتهى.
+  3. **اكتشاف الأخطاء (Error Detection):** عمل صورة مصغرة مضغوطة بحجم `2 Bytes` تُسمى **`CRC`**، وإرفاقها ليقوم المستلم بمقارنتها واكتشاف أي تلاعب أو خطأ حدث للبيانات في الطريق.
+- **وحدة القياس (PDU):** يُضاف هيدر بحجم أقصى `20 Bytes` للداتا المقطعة (`1460 Bytes`)، ليصبح الحجم الإجمالي `1480 Bytes` ويُطلق عليها اسم **`Segment`**.
+
+#### ج. طبقة الإنترنت (Internet / Network Layer)
+- **البروتوكول المستخدم:** الـ `IP` كـ سوفت وير.
+- **الوظيفة:** التوجيه العناوين المنطقية (`Logical Addresses`).
+- يتم هنا إرفاق **`Source IP`** (عنوان المُرسل) و **`Destination IP`** (عنوان المُستلم النهائي). *(الآي بي يتغير بتغير الشبكة المتصل بها الجهاز).*
+- **وحدة القياس (PDU):** يُضاف هيدر الـ IP (بحجم `20 Bytes`) للـ `Segment`، ليُصبح الحجم **`1500 Bytes`** ويُطلق عليها اسم **`Packet`**.
+- **الـ MTU (Maximum Transmission Unit):** هو أقصى حجم مسموح للـ `Packet` وهو `1500 Bytes` (الطرد المُراد إيصاله للنهاية كما هو).
+
+#### د. طبقة الوصول للشبكة (Network Access Layer)
+- تدمج طبقتي (Data Link & Physical) من الـ OSI.
+- **وظيفة الـ Data Link:**
+  * إضافة العناوين الفيزيائية (**`MAC Address`**) لضمان التوجيه خطوة بخطوة (`Hop-by-Hop`). *(الماك أدرس ثابت لا يتغير وهو مثل اسم الجهاز من المصنع).*
+  * يُضاف رأس (`Header`) به الماكات، وذيل (`Trailer`) به `CRC` جديد من `4 Bytes` يصور الطرد بالكامل.
+  * **وحدة القياس (PDU):** تُصبح البيانات مُبروزة وتُسمى **`Frame`** بحجم أقصى **`1518 Bytes`**.
+- **وظيفة الـ Physical:**
+  * يقوم الكارت (`NIC`) بتحويل الـ `Frame` لنبضات كهربائية لتمشي في الكابلات.
+  * **تطور السرعات:**
+    * **Ethernet (سلكي):** بدأ بـ `10 Mbps`، ثم `Fast Ethernet (100 Mbps)`، ثم `Gigabit (1000 Mbps)`، وحالياً في انتظار كارت الـ `Terabit (1 Trillion bps)`.
+    * **Wi-Fi (لاسلكي):** (ابتكار العالم المصري د. حاتم زغلول)، تتطور أجياله وصولاً لـ `Wi-Fi 6` بسرعة `9.6 Gbps` والآن `Wi-Fi 7` بسرعة فلكية `56 Gbps`.
+
+<br>
+<div align="center">
+  <img src="image/data-encapsulation.png" width="80%" alt="Data Encapsulation Process" />
+</div>
+<br>
 
 ---
 
-### 4. شرح وظائف طبقات OSI السبع بالتفصيل
+### 4. رحلة البيانات عبر الرواتر (Hop-by-Hop Concept)
+- **القاعدة الذهبية:** الأجهزة الوسيطة (الرواتر) لا تلمس محتوى الـ `Packet` أبداً. (عناوين الـ IP الخاصة بالمصدر والوجهة النهائية تظل ثابتة طوال الرحلة).
+- **كيف يوجه الراوتر؟**
+  1. يستلم الراوتر الـ `Frame` من الكابل.
+  2. يقوم بقص الرأس والذيل (De-encapsulation) ليتأكد من صحة الـ `CRC` ويقرأ الـ `IP` ليعرف الوجهة النهائية.
+  3. يقوم بصنع `Frame` جديد كلياً (`Encapsulation`)، ويضع فيه `MAC` الخاص به كـ Source، والـ `MAC` الخاص بالراوتر القادم كـ Destination.
+- **الخلاصة:** الـ `IP` ثابت للإيصال للوجهة النهائية، بينما الـ `MAC` يتغير مع كل خطوة (قفزة) ليُسلم الطرد للمحطة التالية.
 
-#### Layer 7: Application Layer
-* ليست برامج تحرير النصوص المحلية (مثل Word أو Notepad)، بل البرمجيات والخدمات التي تتطلب استخدام الشبكة أو الإنترنت لتوفير الخدمة كالتصفح (Browsing) أو تحميل الملفات (Download).
-* أول نقطة تواصل وتفاعل مباشر مع المستخدم النهائي (`User Interface`) على جهاز الإرسال، وآخر طبقة تصل إليها البيانات عند الاستقبال.
-
-#### Layer 6: Presentation Layer
-* **تحديد هيئة ونوع البيانات (`Data Format`):** وضع علامات تعريفية في الترويسة لتمييز نوع الملف (مثل `ASCII` للـ Text، و `JPEG/GIF` للصور، و `MP4/AVI` للفيديو، و `MP3` للصوت) لأن الأنظمة مثل لينكس لا تعتمد بالضرورة على الامتداد الظاهري للملف بل تقرأ تركيبه الداخلي من خلال عملية التشفير الخاصة بالعرض `Encoding`.
-* **الضغط وفك الضغط (`Compression & Decompression`):** ضغط البيانات المنقولة أثناء الخروج لتوفير استهلاك الباندويث وسرعة النقل، وإعادة فكها عند المستلم.
-* **التشفير وفك التشفير (`Encryption & Decryption`):** تحويل النصوص والبيانات إلى نصوص مشفرة غير مفهومة على كابل الشبكة وتفكيكها عند الطرف المعتمد.
-
-#### Layer 5: Session Layer
-* مسؤولة عن إدارة جلسات العمل بين الأجهزة عبر ثلاث مراحل:
-  1. **Establishment:** التفاوض بين الجهازين وحجز الموارد اللازمة للجلسة وتحديد عددها.
-  2. **Maintenance:** الحفاظ على بقاء الجلسة مفتوحة ونشطة طوال فترة النقل والتأكد من متطلباتها.
-  3. **Termination:** إنهاء الجلسة وإغلاقها لتحرير الموارد فور اكتمال النقل (سواء من جهة العميل أو بقرار إداري من السيرفر عند تجميد الجلسة).
-* تحدد أيضاً نمط الاتصال (`Communication Mode`) سواء كان Simplex أو Half-Duplex أو Full-Duplex.
-* **آلية التفاوض على الـ Duplex وحالة الخطأ (Duplex Mismatch):**
-  * في حال ضبط أحد الطرفين يدوياً (`Hardcoded`) ليكون Full-Duplex، وترك الطرف الآخر على الوضع الافتراضي Auto، تحدث حالة كارثية تسمى **Duplex Mismatch**؛ ينتج عنها أخطاء وبطء شديد.
-
-#### Layer 4: Transport Layer
-* مسؤولة عن التوصيل الشامل للبيانات من البداية حتى النهاية (`End-to-End Delivery`).
-* **التقسيم والتجميع (`Segmentation`):** تقسيم البيانات إلى قطع يمكن نقلها وتخصيص رقم تسلسلي (`Sequence Number`) لكل قطعة لتسهيل التتبع والترتيب عند الاستلام.
-* **إضافة عناوين المنافذ (`Port Number`):** لتحديد نوع الخدمة المطلوبة. المصطلح `Socket` يطلق على دمج الـ `IP Address` مع الـ `Port Number` معاً (مثل `10.0.0.1:443`).
-* **مقارنة بروتوكولي TCP و UDP:**
-  * **TCP (Transmission Control Protocol):**
-    * بروتوكول موثوق ويعتمد على إنشاء اتصال مسبق (`Connection-Oriented / Reliable`).
-    * يعتمد على إرسال تأكيدات الاستلام (`Acknowledgments - ACKs`)، مع إعادة إرسال أي حزم مفقودة (`Retransmission / Error Correction`).
-  * **UDP (User Datagram Protocol):**
-    * بروتوكول سريع وغير موثوق ولا ينشئ اتصالاً مسبقاً (`Connectionless / Unreliable`).
-    * لا يرسل تأكيد استلام ولا يُعيد إرسال القطع المفقودة لتقليل التأخير.
-* **التحكم في التدفق (`Flow Control & Windowing / Buffering`):**
-  * تحديد كمية البيانات التي يمكن إرسالها قبل استلام تأكيد، وذلك لتفادي إغراق ذاكرة المستلم.
-
-#### Layer 3: Network Layer
-* **العنونة المنطقية (`Logical Addressing`):** تضمين عنوان الـ IP المصدر والـ IP الهدف (`Source & Destination IP`).
-* **التوجيه واختيار المسار الأمثل (`Path Determination & Routing`):**
-  * وظيفة الراوتر الأساسية؛ حيث يبني جدول توجيه (`Routing Table`) سواء بشكل ثابت (`Static`) أو ديناميكي عبر بروتوكولات التوجيه (`Dynamic Routing Protocols`).
-
-#### Layer 2: Data Link Layer
-* مسؤولة عن نقل البيانات محلياً داخل نفس وسيط الإرسال من جهاز لآخر (`Hop-to-Hop Delivery / Switching`) وتعتبر الطبقة الوحيدة المقسمة إلى طبقتين فرعيتين:
-  1. **LLC (Logical Link Control):**
-     * تتصل بالطبقات العليا وتضيف الـ Header المناسب للبروتوكول المستخدم في الـ Network Layer (`Multiplexing`).
-  2. **MAC (Media Access Control):**
-     * مسؤولة عن إضافة العناوين الفيزيائية (`Source & Destination MAC`)، وإدارة الوصول للوسيط عبر تقنيات مثل `CSMA/CD` أو `CSMA/CA`.
-
-#### Layer 1: Physical Layer
-* تحويل البيانات التي تكون على شكل `Frame` قادمة من Data Link Layer إلى إشارات مادية (`Encoding / Signaling`) تناسب نوع الوسيط الناقل:
-  * نبضات كهربائية (`Electrical Signal`) عبر كابلات النحاس (`Copper`).
-  * نبضات ضوئية (`Optical Pulses`) عبر كابلات الألياف الزجاجية (`Fiber Optics`).
-  * موجات تردد كهرومغناطيسية عبر الهواء في الشبكات اللاسلكية (`Wi-Fi`).
+<br>
+<div align="center">
+  <img src="image/hop-by-hop.png" width="70%" alt="Hop-by-Hop Routing Concept" />
+</div>
+<br>
 
 ---
 
-### 5. مقارنة نموذج OSI مع مراحل تطوير TCP/IP
+### 5. جدول التلخيص والمقارنة (OSI Model vs TCP/IP)
 
-**النموذج الكلاسيكي القديم (Original DoD - 4 Layers):**
-* `Application Layer`: تضم وظائف طبقات Application و Presentation و Session.
-* `Transport Layer (Host-to-Host)`: تقابل طبقة Transport في OSI.
-* `Internet Layer`: تقابل طبقة Network في OSI وتعتمد بروتوكول IP.
-* `Network Access Layer`: تضم وظائف طبقتي Data Link و Physical.
+<div dir="rtl">
 
-**النموذج المعتمد والفعلي الحالي (Updated TCP/IP - 5 Layers):**
-1. `Application Layer`
-2. `Transport Layer`
-3. `Internet / Network Layer`
-4. `Data Link Layer`
-5. `Physical Layer`
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+  <thead>
+    <tr bgcolor="#161b22">
+      <th align="center"># (OSI)</th>
+      <th align="center">اسم الطبقة (OSI)</th>
+      <th align="center">الطبقة المقابلة في الـ TCP/IP</th>
+      <th align="center">وحدة القياس (PDU)</th>
+      <th align="center">البروتوكولات و الأجهزة</th>
+      <th align="center">الوظيفة الأساسية</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><strong>7</strong></td>
+      <td align="center">Application</td>
+      <td align="center" rowspan="3"><strong>Application Layer</strong></td>
+      <td align="center" rowspan="3"><strong>Data</strong></td>
+      <td align="center" rowspan="3"><code>HTTP</code>, <code>FTP</code>, <code>DNS</code>, <code>SMTP</code></td>
+      <td rowspan="3">توفير الواجهة للمستخدم، تشفير وضغط البيانات، وتحويلها من لغة البشر إلى بيانات خام للآلة.</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>6</strong></td>
+      <td align="center">Presentation</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>5</strong></td>
+      <td align="center">Session</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>4</strong></td>
+      <td align="center">Transport</td>
+      <td align="center"><strong>Transport Layer</strong></td>
+      <td align="center"><strong>Segment</strong></td>
+      <td align="center"><code>TCP</code>, <code>UDP</code></td>
+      <td>تقطيع الداتا، الترقيم (Sequence)، واكتشاف الأخطاء (CRC). (تختار بين الدقة والإنجاز).</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>3</strong></td>
+      <td align="center">Network</td>
+      <td align="center"><strong>Internet Layer</strong></td>
+      <td align="center"><strong>Packet</strong></td>
+      <td align="center"><code>IP Protocol</code><br><strong>(Routers)</strong></td>
+      <td>التوجيه المنطقي عبر إضافة عناوين الـ Source IP والـ Destination IP للوجهة النهائية. (MTU = 1500).</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>2</strong></td>
+      <td align="center">Data Link</td>
+      <td align="center" rowspan="2"><strong>Network Access Layer</strong></td>
+      <td align="center"><strong>Frame</strong></td>
+      <td align="center"><code>MAC Address</code><br><strong>(Switches / NIC)</strong></td>
+      <td>التوجيه الفيزيائي خطوة بخطوة (Hop-by-Hop) بإضافة هيدر للماكات و CRC إضافي في الذيل.</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>1</strong></td>
+      <td align="center">Physical</td>
+      <td align="center"><strong>Bits</strong></td>
+      <td align="center"><code>Ethernet / Wi-Fi</code><br><strong>(Cables / Hubs)</strong></td>
+      <td>تحويل الإطارات (Frames) إلى إشارات كهربائية أو موجات لاسلكية لنقلها عبر وسط الاتصال.</td>
+    </tr>
+  </tbody>
+</table>
 
-<p align="center">
-  <img src="images/tcp-ip-protocols-map.png" alt="TCP/IP Protocols Map" width="600" />
-</p>
-
----
-
-### 6. تفاعل الطبقات وتغليف البيانات (Encapsulation Process)
-* تبدأ العملية عندما يُريد جهاز المُرسِل نقل بيانات. تمر البيانات عبر كل طبقة نزولاً، وكل طبقة تغلف البيانات وتضيف ترويستها (`Header`) وتُمررها للطبقة التي تليها، في عملية تُسمى الـ **Encapsulation**.
-* عند الوصول لجهاز المُستقبِل، يتم فك التغليف صعوداً طبقة بطبقة في عملية تُسمى **Decapsulation** حتى الوصول للبيانات الأصلية.
-* **مسميات وحدات البيانات في كل مرحلة (Protocol Data Units - PDU):**
-  * في الطبقات العليا (Application, Presentation, Session): تسمى **Data**.
-  * في طبقة النقل (Transport Layer): تسمى **Segment** (و تُسمى `Datagram` إذا كانت مع UDP).
-  * في طبقة الشبكة (Network Layer): تسمى **Packet**.
-  * في طبقة ربط البيانات (Data Link Layer): تسمى **Frame**.
-  * في الطبقة الفيزيائية (Physical Layer): تسمى **Bits**.
-
-<p align="center">
-  <img src="images/data-encapsulation-pdu.png" alt="Data Encapsulation PDU" width="600" />
-</p>
+</div>
