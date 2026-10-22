@@ -1,164 +1,136 @@
-# 06 - Application Layer Protocols (Part 2)
+# 06 - TCP/IP Deep Dive: IP Categories, DNS & NAT
 
-### 1. بروتوكول الـ DHCP (Dynamic Host Configuration Protocol)
-
-#### 1. الوظيفة والأهمية
-* يوفر إعدادات الشبكة للأجهزة تلقائياً دون تدخل يدوي، لتفادي تكرار العناوين (`IP Conflict`) وتوفير الوقت.
-* **الإعدادات التي يوزعها الـ DHCP:**
-  * الـ `IP Address` الخاص بالجهاز.
-  * الـ `Subnet Mask`.
-  * الـ `Default Gateway` (الـ IP الخاص بمنفذ الـ Router).
-  * عناوين الـ `DNS Servers`.
-  * فترة السماح باستخدام العنوان (`Lease Time`).
-
-#### 2. الـ Ports و بروتوكول الـ Transport
-* يعتمد الـ DHCP بالكامل على بروتوكول **UDP**.
-* يستخدم منفذين منفصلين:
-  * **UDP Port 67:** مخصص للاستماع واستقبال الطلبات على الـ `DHCP Server`.
-  * **UDP Port 68:** مخصص لاستقبال الردود على أجهزة الـ `DHCP Client`.
-
-#### 3. مراحل الحصول على الـ IP (DORA Process)
-تتم عملية التوزيع عبر أربع رسائل رئيسية بالترتيب:
-
-1. **Discover (DHCPDISCOVER):**
-   * يرسل الجهاز طلباً يبحث فيه عن أي `DHCP Server` متاح في الشبكة.
-   * تخرج الرسالة كـ `Broadcast` (الـ Source IP `0.0.0.0` والـ Destination IP `255.255.255.255`، والـ Source MAC هو ماك الجهاز والـ Destination MAC `FF:FF:FF:FF:FF:FF`) لأن الجهاز لا يمتلك IP بعد.
-2. **Offer (DHCPOFFER):**
-   * يستجيب الـ `DHCP Server` بحجز `IP Address` غير مستخدم من الـ `Pool` المتاح وإرساله للجهاز في صورة عرض يتضمن الإعدادات والـ `Lease Time`.
-3. **Request (DHCPREQUEST):**
-   * يرسل الجهاز رسالة `Broadcast` تؤكد موافقته وقبوله لعرض سيرفر معين، وذلك لإعلام باقي السيرفرات في الشبكة بإلغاء عروضها.
-4. **Acknowledge (DHCPACK):**
-   * يرسل السيرفر المختار تأكيداً نهائياً للجهاز بأن العنوان تم حجزه له بنجاح، ليبدأ الجهاز استخدام الـ IP رسمياً على الشبكة.
+### 1. نظرة عامة: كيف تُقرأ عناوين الـ IP؟
+رأينا في المحاضرة السابقة أن الـ `IPv4` مقسم إلى فئات (Classes)، ولكن كيف تقرأ الأجهزة هذه الفئات؟
+يتم قراءة الـ IP كجزأين: **`Network ID`** (اسم الشبكة) و **`Host ID`** (رقم الجهاز داخل الشبكة).
+- **في Class A:** الخانة الأولى فقط تمثل الشبكة، والباقي أجهزة `(N.H.H.H)`.
+- **في Class B:** أول خانتين للشبكة، وآخر خانتين للأجهزة `(N.N.H.H)`.
+- **في Class C:** أول 3 خانات للشبكة، والخانة الأخيرة فقط للأجهزة `(N.N.N.H)`.
+* **ملحوظة هامة:** جميع الأجهزة المتصلة على نفس السويتش (في نفس الـ LAN) يجب أن تتشارك في نفس الـ `Network ID` ليتمكنوا من رؤية بعضهم البعض، وتختلف في الـ `Host ID`.
 
 ---
 
-### 2. منظومة أسماء النطاقات (DNS - Domain Name System)
+### 2. أنواع الـ IP من حيث طريقة التوزيع (IP Types)
+لحل أزمة استنفاد أرقام الـ IPv4 (حيث أن عدد الأجهزة في العالم تخطى الـ 4 مليار)، قامت منظمة **`IANA`** بتقسيم الـ IP إلى نوعين رئيسيين:
 
-#### 1. المفهوم والهدف الجوهري
-* أجهزة الكمبيوتر والـ Routers تتفاهم وتوجه البيانات عبر الـ `IP Addresses` فقط، في حين يفضل البشر التعامل بالأسماء النصية للسهولة (مثل `google.com`).
-* يعمل الـ DNS كدليل الهاتف للشبكة؛ وظيفته الأساسية تحويل الاسم المقروء أو الـ `FQDN` (Fully Qualified Domain Name) إلى `IP Address` رقمي، وهي عملية تسمى `Name Resolution`.
+<div align="right"><strong>أ. العناوين الخاصة (Private IPs)</strong></div>
 
-#### 2. الـ Ports و بروتوكولات الـ Transport
-يعتمد الـ DNS على **Port 53** باستخدام نوعين من البروتوكولات:
-* **UDP Port 53:** يُستخدم في الـ `DNS Queries / Lookups` اليومية العادية نظراً لحجمها الصغير وسرعة الاستجابة المطلوبة.
-* **TCP Port 53:** يُستخدم في عمليات الـ `Zone Transfers` (نقل ومزامنة سجلات الـ DNS بالكامل بين الـ Servers) أو عندما يتجاوز حجم الرد 512 بايت لضمان الـ Reliability.
+- هي عناوين **مجانية** بالكامل، يمكنك استخدامها داخل شركتك أو منزلك دون إذن.
+- **القاعدة الذهبية:** هذه العناوين **ممنوعة من الخروج للإنترنت المباشر**.
+- مسموح بأن تتكرر هذه العناوين في شبكات مختلفة (مثال: نفس الآي بي `192.168.1.1` موجود في ملايين المنازل)، طالما أن هذه الشبكات معزولة عن بعضها.
+- **نطاقات الـ Private IPs:**
+  * **من Class A:** الشبكة التي تبدأ بـ `10.x.x.x`
+  * **من Class B:** الشبكات من `172.16.x.x` إلى `172.31.x.x` (عددهم 16 شبكة).
+  * **من Class C:** الشبكات من `192.168.0.x` إلى `192.168.255.x` (عددهم 256 شبكة).
+- **APIPA (Automatic Private IP Addressing):**
+  هو آي بي برايفت احتياطي (`169.254.x.x`) يعطيه نظام التشغيل (مثل الويندوز) لنفسه تلقائياً في حالة فشله في الحصول على IP من سيرفر הـ `DHCP`، ليبقى قادراً على التواصل محلياً داخل الـ LAN.
 
-#### 3. البنية الهرمية لمنظومة الـ DNS (`Hierarchical Architecture`)
-تتبع شجرة الـ DNS ترتيباً هرمياً يبدأ من الأعلى إلى الأسفل:
-1. **Root Domain (`.`):** نقطة البداية، تديرها الـ `Root Hints Servers` (13 سيرفر مرجعي حول العالم).
-2. **Top-Level Domains (`TLD`):** نطاقات المستوى الأعلى، مثل:
-   * عامة (`gTLD`): `.com`، `.org`، `.net`.
-   * جغرافية (`ccTLD`): `.eg`، `.sa`، `.uk`.
-3. **Second-Level Domain:** اسم النطاق الخاص بالشركة (مثل: `cisco` أو `google`).
-4. **Subdomain / Host:** الخادم الداخلي (مثل: `www` أو `mail`).
+<br>
 
-#### 4. آلية الـ DNS Query و الـ Resolution
-عند كتابة `www.cisco.com` في الـ Browser:
-1. يفحص الجهاز الـ `DNS Cache` المحلي وملف الـ `Hosts`.
-2. إذا لم يعثر عليه، يرسل طلباً إلى الـ `Local DNS Server` (المعين في إعدادات الشبكة) وهو ما يُعرف بالـ `Recursive Query`.
-3. إذا لم يجد الـ Local Server الإجابة، يبدأ بـ `Iterative Queries`:
-   * يستعلم من الـ `Root Server` الذي يوجهه لـ `TLD Server` (الخاص بـ `.com`).
-   * الـ `TLD Server` يوجهه إلى الـ `Authoritative DNS Server` (الخاص بـ Cisco).
-4. يُرجع الـ Authoritative Server الـ IP الفعلي، فيقوم الـ Browser ببدء الاتصال.
+<div align="right"><strong>ب. العناوين العامة (Public / Real IPs)</strong></div>
 
-#### 5. أوامر الـ DNS (DNS Commands)
-* `ipconfig /displaydns`: لعرض محتوى الـ DNS Cache المحلي على نظام Windows.
-* `nslookup`: أداة للاستعلام المباشر من الـ DNS Server عن IP لموقع معين (مثال: `nslookup www.google.com`).
+- هي العناوين **المدفوعة** (تُباع من قِبل الـ IANA لمزودي الخدمة `ISPs`).
+- هي العناوين الوحيدة المسموح لها بالظهور والمرور على شبكة الإنترنت.
+- **القاعدة الذهبية:** يجب أن تكون **فريدة (Unique)** ولا يُسمح بتكرارها على مستوى العالم أبداً.
+- أي عنوان IP لا يقع ضمن نطاقات الـ Private (أو الـ Special IPs كالمحجوزة للجيش والمالتي كاست) يُعتبر عنواناً عاماً `Public`.
 
 ---
 
-### 3. بروتوكولات المزامنة والإدارة ومراقبة الشبكة
-
-#### 1. بروتوكول مزامنة الوقت (NTP - Network Time Protocol)
-* **الوظيفة:** مزامنة الساعة والتاريخ بدقة فائقة بين كافة أجهزة وسيرفرات الشبكة.
-* **الـ Port و بروتوكول الـ Transport:** يعمل عبر **UDP Port 123**.
-* **الأهمية:**
-  * حيوي لسجلات الأحداث (`Syslog Timestamps`) لتتبع الأعطال والهجمات الأمنية بشكل زمني دقيق.
-  * ضروري لصحة عمل الشهادات الرقمية والمصادقة.
-* **الـ Stratum Value:**
-  * مقياس لدقة الساعة ومدى بعدها عن المصدر المرجعي الأساسي للوقت (مثل الساعات الذرية).
-  * `Stratum 0`: المصدر المرجعي عالي الدقة.
-  * `Stratum 1`: أجهزة متصلة مباشرة بمصادر `Stratum 0`.
-  * `Stratum 2`: أجهزة تأخذ الوقت من أجهزة `Stratum 1` عبر الشبكة.
-* **NTP Modes:**
-  * `Client/Server Mode`: الـ Client يطلب الوقت من الـ Server.
-  * `Symmetric Active Mode`: أجهزة الـ NTP تتبادل الوقت فيما بينها (تُستخدم بين الـ Routers).
-  * `Broadcast Mode`: الـ Server يرسل تحديثات الوقت للجميع (`Broadcast`) في الشبكات المحلية.
-
-#### 2. بروتوكول إدارة الشبكة البسيط (SNMP - Simple Network Management Protocol)
-* **الوظيفة:** مراقبة وإدارة أجهزة الشبكة مركزياً.
-* **الـ Port و بروتوكول الـ Transport:**
-  * **UDP Port 161:** مخصص لتبادل استعلامات الإدارة (`Polling / Get & Set Requests`).
-  * **UDP Port 162:** مخصص لاستقبال التنبيهات الفورية من الأجهزة (`SNMP Traps`).
-* **مكونات الـ SNMP:**
-  * **NMS (Network Management Station):** السيرفر أو البرنامج المركزي الذي يقوم بمراقبة الشبكة.
-  * **SNMP Agent:** البرنامج أو الخدمة التي تعمل على أجهزة الشبكة وتقوم بجمع البيانات.
-  * **MIB (Management Information Base):** قاعدة البيانات داخل الجهاز التي تخزن المعلومات التي يمكن للـ NMS قراءتها أو تعديلها.
-* **رسائل الـ SNMP:**
-  * `Get Request`: طلب NMS لقراءة معلومة من الـ Agent.
-  * `Set Request`: طلب NMS لتعديل معلومة على الـ Agent.
-  * `Trap`: رسالة تنبيه غير مطلوبة يرسلها الـ Agent للـ NMS عند حدوث حدث هام (لا تتطلب تأكيد استلام).
-  * `Inform`: رسالة تنبيه مشابهة للـ Trap، لكنها تتطلب تأكيد استلام (`Acknowledgment`) من الـ NMS (متوفرة في SNMPv2c و SNMPv3).
-* **إصدارات البروتوكول:**
-  * `SNMPv1` و `SNMPv2c`: تستخدمان كلمة مرور بنص صريح تسمى `Community String` (`Clear-Text`).
-  * `SNMPv3`: الإصدار الآمن، يدعم التوثيق والتشفير (`Authentication & Encryption`).
-
-#### 3. بروتوكول سجلات النظام (Syslog)
-* **الوظيفة:** تجميع وتوثيق رسائل التنبيهات والأحداث البرمجية الصادرة من أجهزة الشبكة وإرسالها إلى سيرفر مركزي (`Syslog Server`).
-* **الـ Port و بروتوكول الـ Transport:** يعمل عبر **UDP Port 514**.
-* **الأهمية:** حفظ السجلات في مكان آمن خارج الجهاز حتى لا تُفقد عند الـ `Reboot`، للرجوع إليها في الـ `Troubleshooting`.
+### 3. تقنية الـ NAT (Network Address Translation)
+كيف يخرج المستخدم العادي (الذي يحمل Private IP) إلى الإنترنت (الذي يتطلب Public IP)؟ الإجابة هي الـ **`NAT`**.
+- **المكان:** يعمل هذا السوفت وير داخل الراوتر (مثل راوتر المنزل أو الفايرول في الشركات).
+- **الوظيفة:** عندما يحاول جهاز من الـ LAN الخروج للإنترنت، يقوم الراوتر بـ "إخفاء" الـ `Source IP` البرايفت، ويضع بدلاً منه الـ `Public IP` الخاص بالراوتر نفسه (الذي اشتراه من מזود الخدمة).
+- **كيف يفرق الراوتر بين المستخدمين عند عودة البيانات؟ (PAT - Port Address Translation):**
+  الراوتر يمتلك Public IP واحد ويُخرج به عشرات الأجهزة للإنترنت. لكي لا يختلط الرد، يقوم الراوتر بتغيير **الـ `Source Port`** في الهيدر الأزرق لكل مستخدم ليصبح مميزاً (مثال: يخرج بورت المُستخدم الأول برقم `1024`، والمستخدم الثاني برقم `1025`) ويُسجل ذلك في جدول لديه يُسمى **`NAT Table`**.
+  عندما يعود الرد من الإنترنت (مثلاً من سيرفر فيسبوك)، ينظر الراوتر للـ `Destination Port` في الرد، ويطابقه بالجدول ليعرف لأي جهاز في الـ LAN يقوم بتوجيه هذه البيانات.
 
 ---
 
-### 4. جدول خلاصة بروتوكولات الجزء الثاني
+### 4. نظام الـ DNS (Domain Name System)
+كيف يعرف جهازك الـ IP الخاص بموقع معين (مثل فيسبوك) للوصول إليه؟
+- **المشكلة:** البشر يتذكرون الأسماء (`www.facebook.com`) بسهولة، بينما الكمبيوترات والرواتر لا تتعامل إلا بالأرقام (`IP Addresses`).
+- **الحل (DNS):** هو سيرفر يعمل بمثابة "السجل المدني" للإنترنت أو كـ دليل للهواتف. وظيفته تحويل الاسم إلى رقم الـ IP الخاص به والعكس.
+- **كيف يعمل (DNS Request/Reply)؟**
+  1. تقوم بكتابة `facebook.com` في المتصفح.
+  2. يقوم جهازك بإرسال رسالة استعلام (`DNS Request`) إلى سيرفر الـ DNS الذي تعاقد معه מזود الخدمة الخاص بك (أو سيرفرات جوجل الشهيرة `8.8.8.8`).
+  3. يبحث السيرفر في قاعدة بياناته، ويرد برسالة (`DNS Reply`) تحتوي على الـ IP الخاص بالفيسبوك.
+  4. الآن يستطيع جهازك تكوين الـ `Packet` ووضع الـ IP في خانة הـ `Destination IP` وإرسال البيانات.
+* **الـ DNS Cache:** لكي لا يرسل جهازك طلباً للـ DNS في كل مرة تفتح فيها نفس الموقع، يقوم نظام التشغيل بحفظ (Caching) الآي بي واسم الموقع لديه لفترة (تصل لـ 24 ساعة) لتسريع عملية التصفح.
+* **البروتوكول المستخدم:** الـ DNS هو خدمة تعمل في الـ `Application Layer`، ولكن لأن طلب الاستعلام هو عبارة عن "سؤال ورد غطاه"، فإنه يستخدم بروتوكول الـ **`UDP`** للإنجاز عبر المنفذ رقم **`53`**. *(ويستخدم TCP فقط عند تبادل قواعد البيانات بين سيرفرات الـ DNS وبعضها).*
+
+---
+
+### 5. أنواع التوجيه حسب العدد (Casting Types)
+عند إرسال بيانات، كيف يتم تحديد عدد المستلمين؟
+
+<div align="right"><strong>أ. الـ Unicast (الإرسال الفردي)</strong></div>
+
+- يتم الإرسال من جهاز واحد إلى **جهاز واحد فقط**.
+- هو النوع الشائع، حيث يحمل الـ IP عنواناً فريداً لجهاز واحد.
+
+<br>
+
+<div align="right"><strong>ب. الـ Broadcast (البث الإذاعي)</strong></div>
+
+- يتم الإرسال من جهاز واحد إلى **جميع الأجهزة** المتواجدة معه في نفس الشبكة (الـ LAN).
+- يُستخدم للرسائل التحذيرية أو عند البحث عن جهاز غير معروف الـ IP. (الرواتر تمنع مرور الـ Broadcast لشبكات أخرى).
+
+<br>
+
+<div align="right"><strong>ج. الـ Multicast (البث الجماعي)</strong></div>
+
+- يتم الإرسال من جهاز واحد إلى **مجموعة مختارة ومحددة** من الأجهزة (ليس للجميع).
+- تعتمد هذه التقنية على العناوين من فئة **`Class D`** (من 224 إلى 239).
+- **مثال تطبيقي:** في تطبيقات مثل `Zoom`، عند بدء اجتماع جديد، يختار سيرفر زوم IP من كلاس D (مثلاً `224.7.7.7`) ويعطيه كعنوان موحد (`Multicast IP`) لجميع الأجهزة المنضمة لهذا الاجتماع. أي رسالة تُرسل لهذا الـ IP تصل فقط للمشتركين في الاجتماع وتتجاهلها باقي الأجهزة.
+
+<br>
+
+***
+
+<br>
+
+### 6. جدول التلخيص: ملخص تفاعل الداتا في جهازك (End-to-End Summary)
 
 <div dir="rtl">
 
 <table border="1" cellpadding="8" cellspacing="0" width="100%">
   <thead>
     <tr bgcolor="#161b22">
-      <th align="center">البروتوكول</th>
-      <th align="center">الـ Port</th>
-      <th align="center">الـ Transport Protocol</th>
-      <th align="center">الوظيفة الأساسية</th>
-      <th align="center">ملاحظات</th>
+      <th align="center">الخطوة</th>
+      <th align="center">العملية (Operation)</th>
+      <th align="center">الهيدر المُضاف والمحتويات الأساسية</th>
+      <th align="center">اسم الـ PDU</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td align="center"><strong>DHCP</strong></td>
-      <td align="center"><code>67</code> (Server)<br><code>68</code> (Client)</td>
-      <td align="center"><code>UDP</code></td>
-      <td>توزيع عناوين IP وإعدادات الشبكة ديناميكياً</td>
-      <td align="center">يعتمد على خطوات DORA الأربعة</td>
+      <td align="center"><strong>1</strong></td>
+      <td><strong>Application:</strong> تحويل لغة البشر لأصفار ووحايد.</td>
+      <td align="center">- لا يوجد هيدر يُضاف هنا -</td>
+      <td align="center"><strong>Data</strong></td>
     </tr>
     <tr>
-      <td align="center"><strong>DNS</strong></td>
-      <td align="center"><code>53</code></td>
-      <td align="center"><code>UDP</code> (Queries)<br><code>TCP</code> (Zone Transfers)</td>
-      <td>تحويل الـ FQDN إلى عناوين IP</td>
-      <td align="center">يعتمد على بنية هرمية (Root, TLD)</td>
+      <td align="center"><strong>2</strong></td>
+      <td><strong>Transport:</strong> التقطيع والترقيم حسب نوع الخدمة.</td>
+      <td><strong>الهيدر الأزرق:</strong> <code>Source Port</code> (1024+) و <code>Dest Port</code> (80).</td>
+      <td align="center"><strong>Segment</strong></td>
     </tr>
     <tr>
-      <td align="center"><strong>NTP</strong></td>
-      <td align="center"><code>123</code></td>
-      <td align="center"><code>UDP</code></td>
-      <td>مزامنة الوقت والتاريخ بين أجهزة الشبكة</td>
-      <td align="center">يعتمد على الـ Stratum Value لتحديد الدقة</td>
+      <td align="center"><strong>3</strong></td>
+      <td><strong>Internet:</strong> التوجيه النهائي للرحلة.</td>
+      <td><strong>الهيدر الأحمر:</strong> <code>Source IP</code> (جهازك) و <code>Dest IP</code> (السيرفر النهائي).</td>
+      <td align="center"><strong>Packet</strong></td>
     </tr>
     <tr>
-      <td align="center"><strong>SNMP</strong></td>
-      <td align="center"><code>161</code> (Get/Set)<br><code>162</code> (Traps)</td>
-      <td align="center"><code>UDP</code></td>
-      <td>مراقبة وإدارة أجهزة الشبكة مركزياً عبر NMS</td>
-      <td align="center">الإصدار v3 يدعم التشفير (Encrypted)</td>
+      <td align="center"><strong>4</strong></td>
+      <td><strong>Network Access:</strong> التوجيه للقفزة (Hop) القادمة.</td>
+      <td><strong>الهيدر الأخضر:</strong> <code>Source MAC</code> (كارتك) و <code>Dest MAC</code> (الراوتر القادم).</td>
+      <td align="center"><strong>Frame</strong></td>
     </tr>
     <tr>
-      <td align="center"><strong>Syslog</strong></td>
-      <td align="center"><code>514</code></td>
-      <td align="center"><code>UDP</code></td>
-      <td>تجميع وحفظ سجلات الأجهزة في سيرفر مركزي</td>
-      <td align="center">أساسي لعمليات الـ Troubleshooting</td>
+      <td align="center"><strong>5</strong></td>
+      <td><strong>NAT:</strong> الخروج للإنترنت (بالراوتر).</td>
+      <td colspan="2">الراوتر يُعدل الهيدر الأحمر والأزرق: يُخفي الـ <code>Private IP</code> ويضع <code>Public IP</code> الخاص به كـ Source، ويغير الـ <code>Source Port</code> ليُسجله في جدول الـ NAT للعودة.</td>
     </tr>
   </tbody>
 </table>
