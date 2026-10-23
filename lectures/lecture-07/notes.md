@@ -1,205 +1,167 @@
-# 07 - Transport Layer Mechanics (TCP vs UDP Deep-Dive)
+# 07 - Subnetting Deep Dive (Part 1)
 
-### 1. الوظائف الجوهرية للـ Transport Layer
+### 1. مقدمة: لماذا احتجنا إلى الـ Subnetting؟
+في عام 2000، واجه العالم مشكلة استنفاد عناوين الـ `IPv4` بسبب إهدارها بطريقة التوزيع القديمة (بيع فئات كاملة `Classes` للشركات حتى لو لم تكن بحاجة إليها). 
+لحل هذه الأزمة، تم تقديم 3 حلول:
+1. **اختراع IPv6:** لزيادة عدد العناوين بشكل لانهائي (مؤجل للمستقبل).
+2. **العناوين الخاصة (Private IPs):** استخدام عناوين مجانية تتكرر داخلياً ولا تخرج للإنترنت.
+3. **تقسيم الشبكات (Subnetting):** وهو الحل الأهم لتقليل الإهدار في العناوين العامة (Public IPs).
 
-1. **التقطيع وإعادة التجميع (`Segmentation & Reassembly`):**
-   * تقطيع سيل البيانات الضخم القادم من الطبقات العليا إلى أجزاء أصغر تسمى **Segments**.
-   * ترقيم كل شريحة برقم تسلسلي (`Sequence Number`) لتمكين الطرف المستلم من إعادة ترتيبها بدقة حتى لو وصلت غير مرتبة بسبب اختلاف مسارات التوجيه في الشبكة.
-2. **تعددية الإرسال وتوجيه التطبيقات (`Multiplexing`):**
-   * إسناد أرقام المنافذ (`Source Port & Destination Port`) لكل `Segment` لتمييز الجلسات (`Sessions`) والبرامج المتعددة التي تعمل على نفس الجهاز في نفس الوقت.
-3. **اكتشاف وتصحيح الأخطاء (`Error Detection vs Error Recovery`):**
-   * **Error Detection:** مدعوم في كلا البروتوكولين (`TCP` و `UDP`) عبر فحص حقل الـ `Checksum`.
-   * **Error Recovery / Correction:** مقتصر حصرياً على بروتوكول `TCP`؛ حيث يعتمد على آلية إعادة الإرسال (`TCP Retransmission`) عند فقدان أي حزمة.
-4. **التحكم في التدفق وتجنب الازدحام (`Flow Control & Congestion Avoidance`):**
-   * منع إغراق ذاكرة المستلم بالبيانات عبر التفاوض الديناميكي على حجم الـ `Window Size` والـ `Buffer`.
+- **مفهوم الـ Subnetting:** بدلاً من إجبار شركة تحتاج إلى 60 آي بي على شراء شبكة كاملة من كلاس C (256 آي بي) وإهدار الباقي، نقوم بـ "تقسيم" الشبكة الأصلية (الميجر نتورك `Major Network`) إلى شبكات أصغر تُسمى `Subnets` لتُباع على قدر الحاجة.
 
 ---
 
-### 2. مفهوم الـ Sockets والـ Netstat
+### 2. قناع الشبكة (Subnet Mask)
+لا يستطيع الكمبيوتر أو الراوتر معرفة ما إذا كانت الشبكة مقسمة أم لا إلا من خلال الـ `Subnet Mask`.
 
-* **الـ Socket:**
-  * دمج عنوان الـ IP مع الـ Port Number: `IP:Port` (مثال: `192.168.1.100:443`).
-* **الـ Socket Pair:**
-  * يحدد جلسة الاتصال بشكل فريد عالمياً بين الجهازين عبر الربط بين: `Source IP:Source Port` و `Destination IP:Destination Port`.
-* **الأمر `netstat`:**
-  * الأمر `netstat -n`: يعرض كافة الاتصالات النشطة بالأرقام الصريحة للـ Ports والـ IPs فوراً.
-  * إذا نُفذ الأمر بدون الباراميتر `-n` (`netstat` فقط): يتأخر الجهاز ويهنج مؤقتاً لمحاولته عمل استعلام عكسي (`Reverse DNS Lookup / Name Resolution`) لترجمة كافة عناوين الـ IP وأرقام المنافذ إلى أسماء نطاقات وخدمات نصية.
+<div align="right"><strong>أ. الأقنعة الافتراضية (Default Masks)</strong></div>
 
----
+- هي الأقنعة التي تدل على أن الشبكة غير مقسمة ومُستخدمة بحجمها الكامل:
+  * **Class A:** القناع الافتراضي هو `/8` (أو `255.0.0.0`). يُعطي حوالي 16 مليون IP.
+  * **Class B:** القناع الافتراضي هو `/16` (أو `255.255.0.0`). يُعطي 65,536 IP.
+  * **Class C:** القناع الافتراضي هو `/24` (أو `255.255.255.0`). يُعطي 256 IP.
 
-### 3. إنشاء جلسة الاتصال (TCP 3-Way Handshake)
+<br>
 
-قبل إرسال بايت واحد من البيانات، يجب إنشاء جلسة اتصال منطقية (`Logical Session`) عبر ثلاث خطوات متتالية:
+<div align="right"><strong>ب. طرق كتابة الـ Mask</strong></div>
 
-1. **الخطوة الأولى (SYN):**
-   * يرسل الـ Client شريحة تحكم خالية من البيانات، ويفعل فيها الـ `SYN = 1 Flag` كإعلان لبدء فتح الاتصال (`Active Open`).
-   * تتضمن رقماً تسلسلياً عشوائياً مبدئياً يختاره الجهاز ذاتياً يسمى **ISN** (`Initial Sequence Number`).
-   * مثال: شريحة `SYN` برقم تسلسلي `Seq = 100`.
-2. **الخطوة الثانية (SYN + ACK):**
-   * يرد الـ Server كـ (`Passive Open`) بشريحة مشتركة تحتوي على تأكيد استلام ومزامنة في نفس الوقت:
-     * تفعيل `ACK = 1`، وبرقم تأكيد استلام `ACK = 101` (المعنى: استلمت الشريحة 100 بنجاح، وأطلب الشريحة رقم 101).
-     * تفعيل `SYN = 1`، مع توليد رقم تسلسلي عشوائي خاص به ومستقل تماماً وليكن `Seq = 300`.
-3. **الخطوة الثالثة (ACK):**
-   * يرد الـ Client بتأكيد استلام مزامنة الـ Server:
-     * تفعيل `ACK = 1`، وبرقم تأكيد `ACK = 301`.
-     * وضع رقمه التسلسلي المتفق عليه `Seq = 101`.
-* **النتيجة:** يدخل الطرفان في حالة **Established State**، وتبدأ مرحلة نقل حمولة البيانات الفعلية.
-
-<p align="center">
-  <img src="images/tcp-3-way-handshake.png" alt="TCP 3-Way Handshake Process" width="600" />
-</p>
+- **الشكل القديم (Dotted Decimal):** مثل `255.255.255.0` (الأرقام 255 تعني جزء الـ Network، والأصفار تعني جزء الـ Host).
+- **الشكل الحديث (CIDR - Slash Notation):** مثل `/24` أو `/26` (يشير الرقم إلى عدد البتات المخصصة لجزء الـ Network).
 
 ---
 
-### 4. إدارة جلسات TCP والموثوقية (Managing TCP Sessions)
+### 3. قوانين الـ Subnetting الذهبية
+لحساب أي تقسيم لشبكة، نستخدم هذين القانونين السحريين اللذين يعتمدان على الأسس (Powers of 2):
 
-* **حسابات الـ Sequence Number و Acknowledgment Number:**
-  * يمثل حقل الـ `Sequence Number` مساحة قدرها **32 Bits** في الـ Header.
-  * يمثل الـ `Acknowledgment Number` **رقم البايت أو الشريحة التالية المتوقع استلامها** (`Next Expected Byte`).
-  * إذا أرسل المصدر شرائح بأرقام `100, 200, 300, 400`، واستلمها الطرف الآخر كاملة وسليمة، يرسل المستلم تأكيد استلام بقيمة `ACK = 500`.
+<div align="right"><strong>القانون الأول: حساب عدد الـ IPs في كل شبكة مُقسمة (Subnet)</strong></div>
 
-* **سيناريو فقدان شريحة أثناء الإرسال (`Lost Segment Handling`):**
-  * إذا أرسل المصدر الشرائح `100, 200, 300, 400`، ولكن فُقدت الشريحة `200` في الطريق:
-    1. يستلم المستلم `100` ثم `300` و `400` ويحتفظ بها في الـ `Buffer` مؤقتاً.
-    2. يكتشف المستلم وجود فجوة في الترتيب، فيرسل تأكيد استلام `ACK = 200` (أي: آخر رقم سليم وصلني هو ما قبل 200، وأنا أنتظر الشريحة 200).
-    3. يستلم المصدر `ACK = 200`، فيقوم فوراً بإعادة إرسال الشريحة المفقودة `200` (`TCP Retransmission`).
-    4. يستقبلها المستلم ويضعها في مكانها الصحيح، ولأن `300` و `400` موجودتان بالفعل لديه، يقوم المستلم بإرسال `ACK = 500` مباشرة.
+- **المعادلة:** عدد الـ IPs = **$2^{(32 - \text{الماسك الجديد})}$**
+- **السبب:** الرقم 32 يُمثل إجمالي بتات الـ IP. نطرح منه الماسك لنحصل على البتات المتبقية للأجهزة (`Host Bits`).
 
-* **سيناريو فقدان رسالة تأكيد الاستلام (`Lost ACK Handling`):**
-  * إذا وصلت البيانات كاملة إلى المستلم (`100, 200, 300, 400`)، وأرسل `ACK = 500` ولكن رسالة الـ ACK فُقدت على الشبكة:
-    1. ينتظر المصدر وقتاً محدداً (`Retransmission Timeout - RTO`).
-    2. لعدم وصول الـ ACK، يفترض المصدر أن البيانات لم تصل، فيعيد إرسال نفس الحزم السابقة (`100, 200, 300, 400`).
-    3. عند وصولها للمستلم، يقرأ المستلم أرقام الـ `Sequence Numbers` ويكتشف أنها نسخ مكررة (`Duplicate Segments`).
-    4. يقوم المستلم بإسقاط الشرائح المكررة فوراً (`Drop Duplicates`) ويعيد إرسال رسالة `ACK = 500` لتنبيه المصدر بأنها مستلمة بالفعل.
+<br>
+
+<div align="right"><strong>القانون الثاني: حساب عدد الشبكات الناتجة من التقسيم (Number of Subnets)</strong></div>
+
+- **المعادلة:** عدد الشبكات = **$2^{(\text{الماسك الجديد} - \text{الماسك القديم/الأساسي})}$**
+- **السبب:** نطرح الماسك الأصلي من الجديد لنعرف كم `Bit` استلفناها للتقسيم.
 
 ---
 
-### 5. إنهاء الجلسة (TCP 4-Way Handshake)
+### 4. أمثلة تطبيقية على التقسيم (Practical Examples)
 
-يتم إنهاء وإغلاق جلسة الـ TCP عبر 4 خطوات منفصلة لأن كل طرف يجب أن يغلق مسار الإرسال الخاص به بشكل مستقل (`Half-Closed Connection`):
+<div align="right"><strong>المثال الأول: تقسيم شبكة Class C</strong></div>
 
-1. **الخطوة الأولى (`FIN` من الطرف الأول):**
-   * عندما ينهي المرسل نقل كافة بياناته، يرسل شريحة تحتوي على `FIN Flag = 1`.
-2. **الخطوة الثانية (`ACK` من الطرف الثاني):**
-   * يرد المستلم بـ `ACK = 1` ليؤكد استلام طلب الإنهاء، لكنه قد يظل يمتلك بيانات متبقية في الـ `Buffer` يريد إرسالها.
-3. **الخطوة الثالثة (`FIN` من الطرف الثاني):**
-   * بعد أن ينتهي المستلم بدوره من إرسال كافة بياناته، يرسل شريحة `FIN = 1` خاصة به.
-4. **الخطوة الرابعة (`ACK` من الطرف الأول):**
-   * يرد الطرف الأول بـ `ACK = 1` لتأكيد إغلاق الجلسة نهائياً من الجانبين، وتحرير موارد الذاكرة والـ `Sockets`.
+- **المعطيات:** تملك شبكة `200.7.8.0` (ديفولت ماسك `/24`). أردت تقسيمها باستخدام ماسك جديد `/26`.
+- **حساب عدد الـ IPs في كل شبكة جديدة:** 
+  * $2^{(32 - 26)} = 2^6 = \text{64 IPs}$ في كل شبكة فرعية.
+- **حساب عدد الشبكات الناتجة:**
+  * $2^{(26 - 24)} = 2^2 = \text{4 Subnets}$.
+- **النتيجة:** تم تقسيم الـ 256 آي بي إلى 4 شبكات صغيرة، كل شبكة تحتوي على 64 آي بي.
 
-<p align="center">
-  <img src="images/tcp-connection-termination.png" alt="TCP Connection Termination 4-Way Handshake" width="400" />
-</p>
+<br>
 
----
+<div align="right"><strong>المثال الثاني: تقسيم شبكة Class B</strong></div>
 
-### 6. تفاصيل التحكم في التدفق ومفهوم TCB والـ Sliding Window
-
-* **كتلة التحكم في الإرسال (`Transmission Control Block - TCB`):**
-  * مساحة مقتطعة داخل ذاكرة الـ `RAM` لكل جهاز يتم تخصيصها كـ `Buffer` لإدارة جلسة الاتصال وتخزين الحزم قبل معالجتها.
-  * لا يعتبر حجم الـ `Buffer` ثابتاً، بل يتغير ديناميكياً أثناء الجلسة بناءً على استهلاك الرامات والتطبيقات المفتوحة على نظام التشغيل.
-* **آلية الـ Sliding Window:**
-  * يحدد المستلم في حقل `Window Size` حجم البايتات التي يستطيع استقبالها قبل إرسال تأكيد استلام.
-  * تتدرج النافذة تصاعدياً مع استقرار الخط، وإذا حدث اختناق للذاكرة يصغر المستلم حجم النافذة (`Windowing`) ليجبر المصدر على إبطاء سرعة الإرسال ومنع فقدان الحزم (`Congestion Avoidance`).
-
-<p align="center">
-  <img src="images/tcp-sliding-window.png" alt="TCP Sliding Window and Flow Control" width="650" />
-</p>
+- **المعطيات:** تملك شبكة `173.15.0.0` (ديفولت ماسك `/16`). أردت تقسيمها باستخدام ماسك جديد `/23`.
+- **حساب عدد الـ IPs في كل شبكة جديدة:** 
+  * $2^{(32 - 23)} = 2^9 = \text{512 IPs}$ في كل شبكة فرعية.
+- **حساب عدد الشبكات الناتجة:**
+  * $2^{(23 - 16)} = 2^7 = \text{128 Subnets}$.
+- **النتيجة:** تم تقسيم الـ 65,536 آي بي إلى 128 شبكة، كل شبكة تحتوي على 512 آي بي.
 
 ---
 
-### 7. تشريح بنية الـ TCP Header و الـ 6 Flags
+### 5. بروتوكول الـ APIPA (تفاصيل إضافية)
+- **وظيفته:** إذا فشل جهازك في الحصول على آي بي من سيرفر الـ `DHCP` (بسبب عطل أو انقطاع كابل)، يقوم نظام التشغيل بمنح نفسه آي بي مؤقت يسمى **APIPA**.
+- **نطاقه:** يبدأ دائماً بـ **`169.254.x.x`** وماسك `/16`.
+- **العيب الأساسي (الميزة الأمنية):** أجهزة الـ APIPA **لا يمكنها أبداً الخروج للإنترنت** أو تخطي الراوتر، لأن هذه التقنية لا تمنح الجهاز لا `Default Gateway` ولا `DNS`. دورها يقتصر على ربط الأجهزة ببعضها محلياً داخل الـ `LAN` فقط لتبادل الملفات.
 
-* **حجم الـ Header:** يبلغ الحد الأدنى لـ TCP Header **20 Bytes** (وقد يصل إلى 60 بايت في حال وجود خيارات `Options`).
-* **مكونات الـ TCP Header:**
-  * `Source Port` (16 Bits): منفذ المصدر العشوائي.
-  * `Destination Port` (16 Bits): منفذ الهدف للخدمة.
-  * `Sequence Number` (32 Bits): الترقيم التسلسلي للبيانات.
-  * `Acknowledgment Number` (32 Bits): رقم التأكيد المتوقع تالياً.
-  * `Data Offset / Header Length` (4 Bits): يحدد طول الـ Header.
-  * `Reserved` (6 Bits): خانات محجوزة للتطوير المستقبلي.
-  * **الـ Control Flags الستة (تتكون من 6 Bits، كل Flag عبارة عن 1 Bit قيمته إما 0 أو 1):**
-    1. **URG (`Urgent`):**
-       * عند تفعيلها (`URG = 1`)، تدل على أن الـ `Segment` تحمل بيانات طارئة تتطلب المعالجة الفورية وتخطي الطابور (مثل إرسال إشارة مقاطعة `Ctrl+C` أثناء جلسة Telnet).
-       * يرتبط مع حقل **Urgent Pointer** (16 Bits) الذي يحدد موضع نهاية البيانات الطارئة بدقة.
-    2. **ACK (`Acknowledgment`):**
-       * تفعيلها (`ACK = 1`) يعني أن حقل `Acknowledgment Number` يحتوي على قيمة صحيحة ويجب قراءتها.
-    3. **PSH (`Push`):**
-       * عند تفعيلها (`PSH = 1`)، يطلب المرسل من المستلم دفع البيانات فوراً من الـ `Buffer` إلى الـ `Application Layer` دون انتظار اكتمال امتلاء الذاكرة المؤقتة.
-    4. **RST (`Reset`):**
-       * إعادة تعيين وإنهاء فوري ومفاجئ للاتصال (`Abort Connection`) بسبب خطأ جسيم، أو وصول حزمة لمنفذ مغلق، مع مسح كافة محتويات الـ `Buffer` والبدء من جديد.
-    5. **SYN (`Synchronize`):**
-       * مخصصة لمزامنة أرقام الـ `Sequence Numbers` وبدء فتح جلسة الـ Handshake.
-    6. **FIN (`Finish`):**
-       * تدل على انتهاء نقل البيانات والرغبة في إغلاق الجلسة نظامياً.
-  * `Window Size` (16 Bits): حجم النافذة المتاحة في الذاكرة المؤقتة للـ Flow Control.
-  * `Checksum` (16 Bits): التحقق الرياضي من سلامة كامل الـ Header والبيانات.
-  * `Urgent Pointer` (16 Bits): مؤشر نهاية البيانات الطارئة عند تفعيل فلاج URG.
-  * `Options & Padding`: حقول اختيارية للتحكم المتقدم (مثل تفاوض أقصى حجم للشريحة `MSS`).
+<br>
+***
+<br>
 
-<p align="center">
-  <img src="images/tcp-header-structure.png" alt="TCP Header Structure" width="600" />
-</p>
+### 6. جداول التلخيص (Summary Tables)
 
----
-
-### 8. تشريح بنية الـ UDP Header
-
-* **حجم الـ Header:** يبلغ حجم الـ UDP Header **8 Bytes فقط**، وتعتبر ذات حمل خفيف جداً على المعالجات والشبكة (`Low Overhead`).
-* **مكونات الـ UDP Header:**
-  * `Source Port` (16 Bits).
-  * `Destination Port` (16 Bits).
-  * `Length` (16 Bits): الطول الكلي للـ Header مع البيانات المحمولة.
-  * `Checksum` (16 Bits): التحقق من صحة الـ Header وعدم تعرضها للتلف.
-
-<p align="center">
-  <img src="images/udp-header-structure.png" alt="UDP Header Structure" width="500" />
-</p>
-
----
-
-### 9. مقارنة معمارية شاملة: TCP مقابل UDP
-
+#### الجدول الأول: قوانين الـ Subnetting
 <div dir="rtl">
 
 <table border="1" cellpadding="8" cellspacing="0" width="100%">
   <thead>
     <tr bgcolor="#161b22">
-      <th align="center">وجه المقارنة</th>
-      <th align="center">TCP</th>
-      <th align="center">UDP</th>
+      <th align="center">الهدف من الحساب</th>
+      <th align="center">المعادلة (القانون)</th>
+      <th align="center">مثال توضيحي (لشبكة <code>/24</code> قُسمت بـ <code>/26</code>)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td align="center"><strong>طبيعة الاتصال</strong></td>
-      <td align="center">يعتمد على اتصال مسبق (Connection-Oriented)</td>
-      <td align="center">عديم الاتصال المسبق (Connectionless)</td>
+      <td align="center"><strong>عدد الأجهزة (IPs) في كل Subnet</strong></td>
+      <td align="center"><strong>$2^{(32 - \text{New Mask})}$</strong></td>
+      <td align="center">$2^{(32 - 26)} = 2^6 = \text{64 IPs}$</td>
     </tr>
     <tr>
-      <td align="center"><strong>الموثوقية (Reliability)</strong></td>
-      <td align="center">موثوق جداً؛ يرسل تأكيدات استلام (ACKs) ويعيد الإرسال</td>
-      <td align="center">غير موثوق؛ لا يرسل تأكيدات ولا يعيد الإرسال (Best-Effort)</td>
+      <td align="center"><strong>عدد الشبكات الناتجة (Subnets)</strong></td>
+      <td align="center"><strong>$2^{(\text{New Mask} - \text{Old Mask})}$</strong></td>
+      <td align="center">$2^{(26 - 24)} = 2^2 = \text{4 Subnets}$</td>
     </tr>
     <tr>
-      <td align="center"><strong>حجم الـ Header</strong></td>
-      <td align="center">20 بايت كحد أدنى (ثقيل نسبياً)</td>
-      <td align="center">8 بايت فقط (خفيف وسريع جداً)</td>
+      <td align="center"><strong>عدد الأجهزة الفعالة (Valid Hosts)</strong></td>
+      <td align="center"><strong>عدد الـ IPs - 2</strong></td>
+      <td align="center">$64 - 2 = \text{62 Valid Hosts}$</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+
+<br>
+
+#### الجدول الثاني: تحويلات الماسك الشائعة وحجمها
+<div dir="rtl">
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+  <thead>
+    <tr bgcolor="#161b22">
+      <th align="center">الماسك (CIDR)</th>
+      <th align="center">عدد الآيبيهات الناتجة ($2^{(32-Mask)}$)</th>
+      <th align="center">ملاحظات واستخدامات</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><strong><code>/30</code></strong></td>
+      <td align="center">4 IPs</td>
+      <td>يُستخدم للربط المباشر بين راوترين (P2P).</td>
     </tr>
     <tr>
-      <td align="center"><strong>التحكم في التدفق (Flow Control)</strong></td>
-      <td align="center">يدعم الـ Flow Control عبر Sliding Window و Buffer</td>
-      <td align="center">لا يدعم أي تحكم في التدفق</td>
+      <td align="center"><strong><code>/29</code></strong></td>
+      <td align="center">8 IPs</td>
+      <td>مكاتب صغيرة جداً.</td>
     </tr>
     <tr>
-      <td align="center"><strong>ترتيب البيانات (Ordered Delivery)</strong></td>
-      <td align="center">يعيد ترتيب الشرائح تلقائياً عبر Sequence Numbers</td>
-      <td align="center">تصل البيانات كما هي دون إعادة ترتيب</td>
+      <td align="center"><strong><code>/28</code></strong></td>
+      <td align="center">16 IPs</td>
+      <td>أقسام صغيرة في شركة.</td>
     </tr>
     <tr>
-      <td align="center"><strong>أبرز التطبيقات والبروتوكولات</strong></td>
-      <td align="center">HTTP (80), HTTPS (443), SSH (22), Telnet (23), FTP (20/21), SMTP (25)</td>
-      <td align="center">DNS Queries (53), DHCP (67/68), TFTP (69), NTP (123), SNMP (161/162), VoIP, Live Streaming</td>
+      <td align="center"><strong><code>/27</code></strong></td>
+      <td align="center">32 IPs</td>
+      <td>فروع متوسطة.</td>
+    </tr>
+    <tr>
+      <td align="center"><strong><code>/26</code></strong></td>
+      <td align="center">64 IPs</td>
+      <td>تقسيم كلاس C إلى 4 أرباع.</td>
+    </tr>
+    <tr>
+      <td align="center"><strong><code>/25</code></strong></td>
+      <td align="center">128 IPs</td>
+      <td>تقسيم كلاس C إلى نصفين.</td>
+    </tr>
+    <tr>
+      <td align="center"><strong><code>/24</code></strong></td>
+      <td align="center">256 IPs</td>
+      <td>القناع الافتراضي لكلاس C.</td>
     </tr>
   </tbody>
 </table>
