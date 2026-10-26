@@ -1,166 +1,147 @@
-# 08 - IPv4
+# 08 - MAC Address, Frame Structure, ARP & Network Media
 
-### مقدمة عن بروتوكول `IPv4` وهيكلية العنوان
+### 1. ما هو الـ MAC Address؟
+العنوان الفيزيائي (Physical Address) أو الـ `MAC Address` هو بمثابة "الاسم" الثابت للجهاز الذي لا يتغير بتغير مكانه (على عكس الـ IP).
 
-يعتبر `IPv4` (اختصار لـ `Internet Protocol version 4`) البروتوكول الأساسي المسؤول عن إسناد الـ `Logical Addresses` للأجهزة وتوجيه البيانات (`Routing`) داخل طبقة `Network Layer`
-
-* يتكون عنوان `IPv4` الإجمالي من **32-bit**
-* يُكتب العنوان بطريقة `Dotted Decimal Notation`
-* ينقسم العنوان إلى 4 خانات، تسمى كل خانة `Octet`، وكل `Octet` يحتوي على **8-bit**
-* كل `Octet` يمثل قيمة تتراوح بين **0** إلى **255**، مما يعطي إجمالي $2^8 = 256$ احتمالاً لكل خانة
-* يتكون العنوان منطقياً من جزأين رئيسيين:
-  * **معرف الشبكة (`Network ID`)**: يُحدد رقم الشبكة التي ينتمي إليها الجهاز
-  * **معرف الجهاز (`Host ID`)**: يُحدد رقم الجهاز الفريد داخل تلك الشبكة
-
----
-
-### التحويل الرياضي بين النظام العشري والثنائي (`Decimal to Binary Conversion`)
-
-للتعامل مع عناوين `IPv4` وفهم الـ `Subnetting`، يتم تحويل كل `Octet` مكون من 8 بت اعتماداً على مضاعفات الرقم 2 وقيم الأوزان لكل خانة ثنائية:
-
-$$128 \quad 64 \quad 32 \quad 16 \quad 8 \quad 4 \quad 2 \quad 1$$
-
-خطوات تحويل رقم عشري (مثال: الرقم 100) إلى النظام الثنائي:
-
-1. نقارن الرقم 100 بالخانة الأكبر من جهة اليسار (128): بما أن $100 < 128$، نضع القيمة **0**
-2. ننتقل للخانة التالية (64): بما أن $100 \ge 64$، نضع القيمة **1** ونطرح: $100 - 64 = 36$
-3. نقارن المتبقي (36) بالخانة (32): بما أن $36 \ge 32$، نضع القيمة **1** ونطرح: $36 - 32 = 4$
-4. نقارن المتبقي (4) بالخانة (16): أصغر، نضع القيمة **0**
-5. نقارن المتبقي (4) بالخانة (8): أصغر، نضع القيمة **0**
-6. نقارن المتبقي (4) بالخانة (4): يساويها، نضع القيمة **1** ونطرح: $4 - 4 = 0$
-7. نضع **0** في الخانات المتبقية (2 و 1)
-8. الناتج النهائي لتمثيل 100 هو: `01100100`
+- **مواصفاته:** 
+  * يتكون من **`48 Bits`**، ويُكتب بنظام الـ Hexadecimal (السادس عشري) لتبسيط قراءته.
+  * يظهر على شكل **12 حرفاً/رقماً** (مثال: <span dir="ltr"><code>A1:B2:C3:D4:E5:F6</code></span>).
+  * مطبوع وثابت من المصنع (Burned-in) على شريحة الـ `ROM` الموجودة داخل كارت الشبكة (`NIC`).
+- **كيف يتم تنظيمه؟** منظمة **`IEEE`** هي المسؤولة عن تنظيمه، وتقسمه إلى نصفين:
+  1. **نصف للشركة المصنعة (OUI - Organizationally Unique Identifier):** أول `24 Bits` (أول 6 حروف) تمثل كود الشركة (مثل Cisco أو Apple).
+  2. **نصف للجهاز (Host Part):** آخر `24 Bits` (آخر 6 حروف) تضعها الشركة برقم تسلسلي لكل كارت لتضمن عدم تكراره. النصف الواحد يعطي الشركة الحق في إنتاج `16.7` مليون كارت، وإذا انتهت تشتري كود `OUI` جديد من المنظمة.
 
 ---
 
-### فئات العناوين في `IPv4` (`Classful Addressing`)
+### 2. أنواع توجيه الـ MAC Address
+كيف يتم تحديد المستلم على مستوى الـ Switch (Layer 2)؟
 
-تم تصنيف العناوين تاريخياً عبر منظمة `IANA` إلى خمس فئات أساسية (`Classes`) بناءً على قيم الـ `Fixed Bits` الأولى من جهة اليسار:
+<div align="right"><strong>أ. الإرسال الفردي (Unicast MAC)</strong></div>
 
-<div dir="ltr">
+- توجيه رسالة من جهاز لجهاز واحد فقط، ويكون الـ Destination MAC هو عنوان فريد يخص جهازاً بعينه. (باقي الأجهزة في الشبكة تتجاهل الرسالة).
+
+<br>
+
+<div align="right"><strong>ب. البث الإذاعي (Broadcast MAC)</strong></div>
+
+- توجيه رسالة تجبر **جميع الأجهزة** على فتحها ومعالجتها (`Process`).
+- يكون الـ Destination MAC عبارة عن حرف F متكرر 12 مرة: <span dir="ltr"><code>FF:FF:FF:FF:FF:FF</code></span>.
+
+<br>
+
+<div align="right"><strong>ج. البث الجماعي (Multicast MAC)</strong></div>
+
+- توجيه رسالة لمجموعة معينة من الأجهزة (مثل الأجهزة المنضمة لاجتماع Zoom).
+- يبدأ الماك أدرس دائماً بالكود <span dir="ltr"><code>01:00:5E</code></span> ليدل على أنه مخصص للـ Multicast.
+
+---
+
+### 3. بروتوكول الـ ARP (Address Resolution Protocol)
+كيف يعرف جهازك الـ MAC Address الخاص بجهاز آخر أو بالراوتر لكي يُكمل بناء الـ Frame؟ 
+الإجابة هي بروتوكول **`ARP`**.
+
+1. **الطلب (ARP Request):** يرسل جهازك رسالة `Broadcast` للجميع يسأل فيها: "من يملك هذا الـ IP؟ أرسل لي الـ MAC الخاص بك".
+2. **الرد (ARP Reply):** الجهاز صاحب الـ IP يرى الرسالة ويرد بـ `Unicast` قائلاً: "هذا أنا، وهذا هو الـ MAC الخاص بي".
+3. **التخزين (ARP Cache):** يقوم جهازك بتخزين هذه المعلومة في جدول لديه يُسمى `ARP Table` لكي لا يسأل عنها مرة أخرى.
+
+---
+
+### 4. بنية الـ Frame وأحجامها (Frame Structure)
+البيانات وهي تخرج من كارت الشبكة للمحطة التالية يجب أن تأخذ شكل الـ `Frame`. 
+
+- **حدود الحجم:**
+  * **الحد الأقصى:** `1518 Bytes` (للحفاظ على جودة الأداء في الكابلات).
+  * **الحد الأدنى:** `64 Bytes` (البيانات التي تقل عن هذا الحجم تضر بأداء الشبكة وتعتبر إهداراً للموارد، لذلك يجب تجنب إرسال بيانات متناهية الصغر مثل نقطة واحدة في الشات).
+- **أجزاء الـ Frame الأساسية:**
+  1. **التسخين (Preamble):** حجمه `8 Bytes` (غير محسوب في الـ 1518). وظيفته تهيئة الكارت المستقبل لمعرفة سرعة الإرسال عبر إرسال نبضات `10101010` (قيام/جلوس).
+  2. **الهيدر الأخضر (Header):** حجمه `14 Bytes`، ويحتوي على:
+     - `Destination MAC` (6 Bytes)
+     - `Source MAC` (6 Bytes)
+     - `Type` (2 Bytes): لتحديد ما إذا كان الـ IP القادم من نوع IPv4 أو IPv6.
+  3. **البيانات (Payload/Packet):** حجمها من `46` إلى `1500 Bytes`.
+  4. **الذيل (FCS/Trailer):** حجمه `4 Bytes` ويحتوي على معادلة الـ `CRC` لاكتشاف الأخطاء.
+- **وقت الراحة (Idle Time):** بعد إرسال كل فريم، يأخذ الكارت "نَفَس" (استراحة قصيرة) تعادل وقت إرسال `8 Bytes` لتفريغ الكابل من الشحنات الكهربائية قبل إرسال الفريم التالي.
+
+---
+
+### 5. وسائط النقل وكروت الشبكة (Network Media & Interfaces)
+منظمة IEEE هي المسؤولة عن معايير الكابلات وكروت الشبكة، وخصصت كود <span dir="ltr"><code>802.3</code></span> لشبكات الـ Wired الإيثرنت.
+
+<div align="right"><strong>أ. الكابلات النحاسية (Twisted Pair)</strong></div>
+
+- تُسمى منافذها بالحرف `T` (مثل <span dir="ltr"><code>100Base-T</code></span>).
+- تُقاس جودة الكابل بالفئة (`Category`)، وكلما زادت الفئة زاد نقاء النحاس والسرعة المدعومة:
+  * **فئة Cat 3:** سرعة تصل لـ `8 Mbps` (قديم جداً).
+  * **فئة Cat 5:** سرعة تصل لـ `100 Mbps`.
+  * **فئة Cat 6:** سرعة تصل من `1 Gbps` إلى `4 Gbps`.
+  * **فئة Cat 6a / 7 / 8:** سرعات تصل من `10 Gbps` حتى `40 Gbps` (وهذا هو أقصى حد للنحاس).
+- **قاعدة هامة:** يجب أن تتوافق سرعة الكابل مع سرعة كارت الشبكة. تركيب كابل ضعيف (مثل فئة Cat 3) على كارت سريع (Gigabit) سيؤدي لفشل الاتصال.
+
+<br>
+
+<div align="right"><strong>ب. كابلات الألياف الضوئية (Fiber Optics)</strong></div>
+
+- تُستخدم للمسافات الطويلة جداً والسرعات الفائقة التي يعجز عنها النحاس. يتكون الكابل من قلب زجاجي (`Core`) وقشرة عاكسة (`Cladding`).
+- **أنواعه الأساسية:**
+  1. **النوع الأول MMF (Multi-Mode Fiber):** الكور الخاص به سميك (من 50 إلى 62.5 ميكرون). يتشتت فيه الضوء قليلاً، لذا يُستخدم للمسافات القصيرة نسبياً (من `400 متر` إلى `4 كم`).
+  2. **النوع الثاني SMF (Single-Mode Fiber):** الكور الخاص به رفيع جداً (من 8 إلى 9 ميكرون). يسير فيه الضوء في خط مستقيم بدون تشتت، ويصل لمسافات شاسعة (من `10 كم` إلى `100 كم`).
+- **مسميات كروت الفايبر:**
+  * **كارت SX** (Short): للمسافات القصيرة (MMF).
+  * **كارت LX** (Long): للمسافات الطويلة (SMF).
+  * **كارت ZX** (Extra Long): للمسافات الشاسعة (SMF).
+
+<br>
+
+---
+
+<br>
+
+### 6. جداول التلخيص (Summary Tables)
+
+#### الجدول الأول: سرعات ومسميات كروت الشبكة
+<div dir="rtl">
 
 <table border="1" cellpadding="8" cellspacing="0" width="100%">
   <thead>
     <tr bgcolor="#161b22">
-      <th align="center">Class</th>
-      <th align="center">Fixed Bits</th>
-      <th align="center">First IP</th>
-      <th align="center">Last IP</th>
-      <th align="center">Default Subnet Mask</th>
-      <th align="left">Application & Purpose</th>
+      <th align="center">اسم الكارت التقني</th>
+      <th align="center">المسمى التجاري</th>
+      <th align="center">السرعة</th>
+      <th align="center">نوع الكابل</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td align="center"><strong><code>Class A</code></strong></td>
-      <td align="center"><code>0</code></td>
-      <td align="center"><code>1.0.0.0</code></td>
-      <td align="center"><code>127.255.255.255</code></td>
-      <td align="center"><code>255.0.0.0</code> (<code>/8</code>)</td>
-      <td align="left">الشبكات الضخمة (<code>Large Networks</code>) مع عدد هائل من الـ <code>Hosts</code></td>
+      <td align="center"><span dir="ltr"><code>10Base-T</code></span></td>
+      <td align="center">Ethernet</td>
+      <td align="center">10 Mbps</td>
+      <td>نحاس (Twisted Pair)</td>
     </tr>
     <tr>
-      <td align="center"><strong><code>Class B</code></strong></td>
-      <td align="center"><code>10</code></td>
-      <td align="center"><code>128.0.0.0</code></td>
-      <td align="center"><code>191.255.255.255</code></td>
-      <td align="center"><code>255.255.0.0</code> (<code>/16</code>)</td>
-      <td align="left">الشبكات متوسطة الحجم (<code>Medium Networks</code>)</td>
+      <td align="center"><span dir="ltr"><code>100Base-T</code></span></td>
+      <td align="center">Fast Ethernet</td>
+      <td align="center">100 Mbps</td>
+      <td>نحاس (Twisted Pair)</td>
     </tr>
     <tr>
-      <td align="center"><strong><code>Class C</code></strong></td>
-      <td align="center"><code>110</code></td>
-      <td align="center"><code>192.0.0.0</code></td>
-      <td align="center"><code>223.255.255.255</code></td>
-      <td align="center"><code>255.255.255.0</code> (<code>/24</code>)</td>
-      <td align="left">الشبكات المحلية الصغيرة (<code>Small LANs</code>)</td>
+      <td align="center"><span dir="ltr"><code>1000Base-T</code></span></td>
+      <td align="center">Gigabit Ethernet</td>
+      <td align="center">1 Gbps (1000 Mbps)</td>
+      <td>نحاس (Twisted Pair)</td>
     </tr>
     <tr>
-      <td align="center"><strong><code>Class D</code></strong></td>
-      <td align="center"><code>1110</code></td>
-      <td align="center"><code>224.0.0.0</code></td>
-      <td align="center"><code>239.255.255.255</code></td>
-      <td align="center">لا يوجد (<code>No Mask</code>)</td>
-      <td align="left">محجوز لإرسال البث الجماعي (<code>Multicast</code>)</td>
+      <td align="center"><span dir="ltr"><code>10GBase-T</code></span></td>
+      <td align="center">10 Gigabit Ethernet</td>
+      <td align="center">10 Gbps</td>
+      <td>نحاس (Twisted Pair)</td>
     </tr>
     <tr>
-      <td align="center"><strong><code>Class E</code></strong></td>
-      <td align="center"><code>1111</code></td>
-      <td align="center"><code>240.0.0.0</code></td>
-      <td align="center"><code>255.255.255.255</code></td>
-      <td align="center">لا يوجد (<code>No Mask</code>)</td>
-      <td align="left">محجوز للأبحاث والتجارب المعملية (<code>Research & Experimental</code>)</td>
+      <td align="center"><span dir="ltr"><code>1000Base-SX / LX / ZX</code></span></td>
+      <td align="center">Fiber Gigabit</td>
+      <td align="center">1 Gbps</td>
+      <td>ألياف ضوئية (Fiber)</td>
     </tr>
   </tbody>
 </table>
 
 </div>
-
-* لحساب عدد الـ `Networks` المتاحة في أي فئة نستخدم القانون:
-  $$2^{(\text{Network Bits} - \text{Fixed Bits})}$$
-* لحساب عدد الـ `Hosts` المتاحة لكل شبكة نستخدم القانون:
-  $$2^H - 2$$
-  *(حيث تمثل $H$ عدد البتات المخصصة للـ `Host`، ونطرح دائماً 2 لأن أول عنوان مخصص لـ `Network Address` وآخر عنوان مخصص لـ `Broadcast Address`)*
-
----
-
-### العناوين الخاصة والنطاقات المحجوزة (`Private IP & Special Ranges`)
-
-لمنع استنزاف العناوين العامة، خصصت منظمة `IANA` نطاقات محددة للاستخدام الداخلي فقط داخل شبكات الـ `LAN` المحلية ولا يتم تمريرها على الإنترنت (`Non-Routable on Internet`)
-
-<div dir="ltr">
-
-<table border="1" cellpadding="8" cellspacing="0" width="100%">
-  <thead>
-    <tr bgcolor="#161b22">
-      <th align="center">Feature</th>
-      <th align="center">Public IP</th>
-      <th align="center">Private IP</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center"><strong>النطاق والتواجد</strong></td>
-      <td align="center">فريدة عالمياً على مستوى الإنترنت (<code>Globally Unique</code>)</td>
-      <td align="center">تتكرر داخل شبكات <code>LAN</code> مختلفة دون تعارض</td>
-    </tr>
-    <tr>
-      <td align="center"><strong>التوجيه (<code>Routing</code>)</strong></td>
-      <td align="center">قابلة للتوجيه مباشرة عبر مزودي الخدمة (<code>Internet Routable</code>)</td>
-      <td align="center">غير قابلة للتوجيه عبر راوترات الإنترنت وتتطلب استخدام <code>NAT</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>التكلفة</strong></td>
-      <td align="center">مدفوعة ويتم الحصول عليها من مزود الخدمة <code>ISP</code></td>
-      <td align="center">مجانية للاستخدام الداخلي في أي مؤسسة أو شبكة منزلية</td>
-    </tr>
-  </tbody>
-</table>
-
-</div>
-
-* نطاقات العناوين الخاصة (`Private IP Ranges`):
-  * **`Class A`**: من `10.0.0.0` إلى `10.255.255.255`
-  * **`Class B`**: من `172.16.0.0` إلى `172.31.255.255`
-  * **`Class C`**: من `192.168.0.0` إلى `192.168.255.255`
-
-* نطاقات محجوزة لوظائف محددة (`Special Addresses`):
-  * **`Loopback Address` (`127.0.0.0/8`)**: يستخدم النطاق من `127.0.0.1` إلى `127.255.255.255` لاختبار سلامة حزمة بروتوكولات `TCP/IP` وكارت الشبكة `NIC` داخلياً على الجهاز
-  * **`APIPA` (`Automatic Private IP Addressing`)**: النطاق من `169.254.0.1` إلى `169.254.255.254` بقناع `/16`، يُسند ذاتياً للجهاز عند فشل الوصول إلى سيرفر `DHCP`
-  * **البث العام (`General Broadcast`)**: العنوان `255.255.255.255` يُستخدم لإرسال البيانات لجميع الأجهزة داخل نفس نطاق الشبكة المحلي
-
----
-
-### فحص الاتصال عبر أداة `Ping` واستجاباتها
-
-يعتمد أمر `Ping` على بروتوكول `ICMP` للتحقق من الاتصال بين جهازين:
-
-* صيغ الأمر الشائعة:
-  * `ping [IP Address] -t`: استمرار الإرسال بشكل متواصل دون توقف حتى الضغط على `Ctrl+C`
-  * `ping -n [number] [IP Address]`: تحديد عدد حزم الـ `Echo Requests` المرسلة
-  * `ping 127.0.0.1`: اختبار داخلي لسلامة تثبيت `TCP/IP Suite` داخل نظام التشغيل وعمل كارت الشبكة
-
-* دلالات الاستجابة:
-  * **`Reply from [IP]`**: الهدف متاح ويستجيب بنجاح
-  * **`Destination Host Unreachable`**: الراوتر أو الجهاز المحلي لا يجد مساراً للوصول إلى شبكة الوجهة، أو كارت الشبكة مفصول
-  * **`Request Timed Out`**: الحزم أُرسلت ولكن لم يتم تلقي رد خلال المهلة الزمنية؛ إما بسبب إغلاق الجهاز، أو وجود جدار حماية (`Firewall`) يحظر حزم `ICMP Echo`
