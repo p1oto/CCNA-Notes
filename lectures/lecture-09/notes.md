@@ -1,112 +1,69 @@
-# 09 - Fixed Subnetting
+# 09 - Network Devices & Headers Deep Dive
 
-### مفهوم تقسيم الشبكات (`Subnetting`)
+### 1. نظرة أعمق على الهيدرز (Headers Deep Dive)
+تحدثنا سابقاً عن التغليف، وهنا تفصيل لأهم الخانات داخل كل هيدر:
 
-تُقسم عناوين الـ `IP` إلى فئات (`Classes`) رئيسية، وبدون تقسيم إضافي يتم إهدار عدد كبير من العناوين (`IP Waste`) عند إعطاء فئة كاملة لشبكة صغيرة
-* تقنية الـ `Subnetting` تُستخدم لتقسيم شبكة رئيسية واحدة إلى مجموعة من الشبكات الأصغر، سواء كانت متساوية الحجم أو غير متساوية
-* في التقسيم الثابت (`Fixed Subnetting`)، يتم تقسيم الشبكة إلى مجموعة من الشبكات الفرعية التي تحتوي جميعها على عدد متساوٍ من الـ `Hosts`
+<div align="right"><strong>أ. الهيدر الأزرق (Transport Layer / TCP & UDP)</strong></div>
+
+- <span dir="ltr"><code>Source Port</code></span>: رقم المنفذ العشوائي لجهازك عند فتح جلسة جديدة (مثال: الجلسة الأولى تأخذ رقم <code>1024</code>).
+- <span dir="ltr"><code>Destination Port</code></span>: رقم الخدمة التي تقصدها (مثال: <code>80</code> للتصفح، <code>20/21</code> للتحميل، <code>25</code> للإيميل، <code>23</code> للـ Telnet).
+- <span dir="ltr"><code>Length</code></span>: خانة تحدد حجم البيانات (Data part) والذي يكون بحد أقصى <code>1460 Bytes</code>.
+- <span dir="ltr"><code>CRC</code></span>: معادلة لاكتشاف الأخطاء تُحسب بناءً على البيانات والبورتات وحجم الـ Length. 
+
+<br>
+
+<div align="right"><strong>ب. الهيدر الأحمر (Network Layer / IP)</strong></div>
+
+- <span dir="ltr"><code>Source IP</code></span>: عنوان الـ IP الخاص بالجهاز المُرسل (نقطة البداية).
+- <span dir="ltr"><code>Destination IP</code></span>: عنوان الـ IP الخاص بالجهاز المُستقبل (الوجهة النهائية).
+- <span dir="ltr"><code>ToS (Type of Service)</code></span>: خانة تُستخدم لتحديد أولوية وأهمية البيانات (QoS). الرقم الأعلى يعني أهمية قصوى (مثل تمرير الصوت أو الفيديو قبل تحميل الملفات).
+- <span dir="ltr"><code>TTL (Time To Live)</code></span>: عداد عُمره الافتراضي 255. كلما مرت البيانات على راوتر، ينقص العداد بمقدار <code>1</code>. إذا وصل إلى صفر، يرمي الراوتر البيانات لمنعها من الدوران في الشبكة للأبد (Loop prevention).
+
+<br>
+
+<div align="right"><strong>ج. الهيدر الأخضر (Data Link Layer / MAC)</strong></div>
+
+- <span dir="ltr"><code>Destination MAC</code></span>: الماك أدرس الخاص بالمحطة/القفزة التالية (يُكتب أولاً في الفريم).
+- <span dir="ltr"><code>Source MAC</code></span>: الماك أدرس الخاص بالجهاز المُرسل للقفزة الحالية.
+- <span dir="ltr"><code>Type</code></span>: خانة تحدد نوع إصدار الـ IP المُستخدم (IPv4 أو IPv6).
+- **التسخين (Preamble):** <code>8 Bytes</code> غير محسوبة من حجم الـ Frame، عبارة عن نبضات <span dir="ltr"><code>10101010</code></span> لتنبيه الكارت المستقبل للاستعداد ومزامنة السرعة.
+- **الذيل (FCS / Trailer):** حجمه <code>4 Bytes</code> ويُوضع في نهاية الفريم، ويحتوي على معادلة الـ <code>CRC</code> النهائية للتأكد من سلامة الفريم بالكامل من الأخطاء.
+- **وقت الراحة (Idle Time / Inter-frame Gap):** بعد الانتهاء من إرسال الفريم كاملاً بالـ Trailer الخاص به، يأخذ كارت الشبكة "نَفَس" يعادل وقت إرسال <code>8 Bytes</code> كفاصل زمني قبل إرسال الفريم الذي يليه لتفريغ الكابل من الشحنات.
+- **الحد الأدنى للـ Frame:** هو <code>64 Bytes</code>. الإرسال بأقل من ذلك يضر بكفاءة الشبكة (لذلك تجنب إرسال رسائل متناهية الصغر كحرف واحد).
 
 ---
 
-### خطوات حساب التقسيم الثابت (`Subnetting Steps`)
+### 2. مقارنة بين أجهزة الشبكة (Network Devices Comparison)
+كل جهاز في الشبكة يمتلك "مستوى ذكاء" محدد بناءً على الهيدرز التي يستطيع قراءتها ومعالجتها.
 
-1. تحديد عدد الأجهزة (`Hosts`) المطلوبة في كل شبكة فرعية
-2. إيجاد أقرب مضاعف للرقم 2 بحيث يكون ناتجه أكبر من أو يساوي عدد الـ `Hosts` المطلوب مضافاً إليه 2 (لتعويض الـ `IPs` المحجوزة للـ `Network ID` والـ `Broadcast ID`)
-3. حساب قناع الشبكة الجديد (`New Subnet Mask`) عن طريق طرح عدد بتات الـ `Hosts` المستعارة من 32 للحصول على البادئة الجديدة (`Prefix Length`)
-4. تقسيم الشبكة الأصلية إلى شبكات فرعية (`Subnets`) بناءً على حجم القفزة (`Block Size`) الذي تم حسابه
+<div align="right"><strong>أ. الـ Hub (مشترك غشيم - Layer 1)</strong></div>
 
----
+- لا يفهم أرقاماً (IPs) ولا حروفاً (MACs).
+- وظيفته الوحيدة تقوية الإشارة الكهربائية (Regenerate) ثم عمل <span dir="ltr"><code>Flood</code></span> (فيضان)؛ أي يرسل البيانات الخارجة من جهاز إلى جميع الأجهزة الأخرى المتصلة به دون تمييز. (انقرض استخدامه عملياً).
 
-### تقسيم الشبكات الثابت (`Fixed Subnetting`)
+<br>
 
-في الـ `Fixed Subnetting` بنقسم الشبكة إلى مجموعة من الشبكات فيها عدد متساوي من الـ `Hosts`
-مثلاً لو عايزين نقسم الشبكة `192.168.1.0/24` لمجموعة من الشبكات من 15 `IP`
-الرمز `/24` يسمى `Prefix` وهو طريقة أخرى لتمثيل الـ `Subnet Mask` وبيمثل عدد الـ `Bits` اللي بتساوي 1 من الشمال لليمين
+<div align="right"><strong>ب. الـ Switch العادي (جهاز التوجيه المحلي - Layer 2)</strong></div>
 
-أولاً لتقسيم الشبكة لمجموعة متساوية من الشبكات من 15 `IP` هنستخدم المعادلة $2^n - 2 = x$ حيث $x$ هي عدد الـ `IPs` اللي إحنا عايزينه، و $n$ هو عدد الـ `Bits` المحجوزة للـ `Hosts`، و 2 هو الـ `IP` المحجوز للـ `Broadcast` والـ `IP` المحجوز لعنوان الشبكة
+- يفهم الماكات فقط. يبني جدولاً في الرامات يُسمى <span dir="ltr"><code>MAC Table</code></span>.
+- **كيف يتعلم؟** عندما يتحدث جهاز، يسجل السويتش الـ Source MAC الخاص به.
+- **كيف يوجه؟** ينظر للـ Destination MAC ليوصل البيانات لصاحبها.
+- **متى يعمل Flood؟** إذا كان لا يعرف مكان المُستلم، أو إذا كانت الرسالة موجهة للجميع (Broadcast) أو لمجموعة (Multicast).
+- **التنظيف الذاتي:** إذا صمت جهاز ولم يرسل بيانات لمدة 5 دقائق، يمسح السويتش الماك الخاص به من الجدول لتوفير المساحة.
 
-ثانياً هنشوف أقرب رقم للـ $n$ يخلي ناتج المعادلة أكبر من أو يساوي 15:
-$$2^n \ge 15 + 2$$
+<br>
 
-أقرب رقم للـ $n$ هو 5 واللي هيدينا 32 `IP` في الشبكة الواحدة
-وبالتالي آخر `Octet` في منه 5 `Bit` من اليمين محجوزين لعدد الـ `Hosts`
+<div align="right"><strong>ج. الـ Router (بوابة الخروج - Layer 3)</strong></div>
 
-الـ `Subnet Mask` مع الـ `Prefix` `/24` كان `11111111.11111111.11111111.00000000`
-بعد الـ `Subnetting` يتم التحديث إلى `/27` ليصبح `255.255.255.224`
+- يفهم الـ MAC والـ IP. يبني جدولاً يُسمى <span dir="ltr"><code>Routing Table</code></span>.
+- يُستخدم للربط بين الشبكات المختلفة (LAN to WAN).
+- لا يقوم بعمل Flood للـ Broadcast إطلاقاً، بل يوقفه عنده كحاجز.
+- **كيف يتعلم؟** لا يتعلم بمفرده كالسويتش، بل يجب تعليمه يدوياً (Static) أو بتشغيل بروتوكول توجيه (مثل OSPF).
 
-أول شبكة هتكون:
-* **`Network address`**: `192.168.1.0`
-* **`Usable IP range`**: `192.168.1.1` إلى `192.168.1.30`
-* **`Broadcast address`**: `192.168.1.31`
+<br>
 
-يتم اعتبار العنوان الصفري، لذلك نزيد بمقدار 32 في كل مرة للحصول على الـ `Block` الجديد
----
+<div align="right"><strong>د. الـ Firewall (الجدار الناري - Layer 4 to 7)</strong></div>
 
-### استخراج نطاقات الشبكات الفرعية (`Subnet Ranges`)
-
-مع كل قفزة بمقدار 32، نستخرج الـ `Network ID` (أول عنوان) والـ `Broadcast Address` (آخر عنوان)، وما بينهما هو النطاق المتاح للأجهزة (`Usable IP Range`)
-
-<div dir="ltr">
-
-<table border="1" cellpadding="8" cellspacing="0" width="100%">
-  <thead>
-    <tr bgcolor="#161b22">
-      <th align="center">Subnet</th>
-      <th align="center">Network ID (First IP)</th>
-      <th align="center">Usable IP Range</th>
-      <th align="center">Broadcast Address (Last IP)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center"><strong>N1</strong></td>
-      <td align="center"><code>192.168.1.0</code></td>
-      <td align="center"><code>192.168.1.1</code> - <code>192.168.1.30</code></td>
-      <td align="center"><code>192.168.1.31</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N2</strong></td>
-      <td align="center"><code>192.168.1.32</code></td>
-      <td align="center"><code>192.168.1.33</code> - <code>192.168.1.62</code></td>
-      <td align="center"><code>192.168.1.63</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N3</strong></td>
-      <td align="center"><code>192.168.1.64</code></td>
-      <td align="center"><code>192.168.1.65</code> - <code>192.168.1.94</code></td>
-      <td align="center"><code>192.168.1.95</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N4</strong></td>
-      <td align="center"><code>192.168.1.96</code></td>
-      <td align="center"><code>192.168.1.97</code> - <code>192.168.1.126</code></td>
-      <td align="center"><code>192.168.1.127</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N5</strong></td>
-      <td align="center"><code>192.168.1.128</code></td>
-      <td align="center"><code>192.168.1.129</code> - <code>192.168.1.158</code></td>
-      <td align="center"><code>192.168.1.159</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N6</strong></td>
-      <td align="center"><code>192.168.1.160</code></td>
-      <td align="center"><code>192.168.1.161</code> - <code>192.168.1.190</code></td>
-      <td align="center"><code>192.168.1.191</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N7</strong></td>
-      <td align="center"><code>192.168.1.192</code></td>
-      <td align="center"><code>192.168.1.193</code> - <code>192.168.1.222</code></td>
-      <td align="center"><code>192.168.1.223</code></td>
-    </tr>
-    <tr>
-      <td align="center"><strong>N8</strong></td>
-      <td align="center"><code>192.168.1.224</code></td>
-      <td align="center"><code>192.168.1.225</code> - <code>192.168.1.254</code></td>
-      <td align="center"><code>192.168.1.255</code></td>
-    </tr>
-  </tbody>
-</table>
-
-</div>
+- يبني جدولاً يُسمى <span dir="ltr"><code>Inspection Table</code></span>، ويقرأ حتى أرقام البورتات (Layer 4).
+- **قاعدته الافتراضية:** يسمح للبيانات بالخروج من الشبكة الداخلية للإنترنت، ويمنع دخول أي اتصال قادم من الخارج (إلا إذا كان رداً على طلب داخلي).
+- **الجيل الحديث (Next-Gen Firewall):** يصل ذكاؤه إلى (Layer 7)، أي يفهم محتوى البيانات نفسه (Payload) ويمكنه منع كلمات معينة، أفعال معينة (مثل Like أو Comment)، أو تطبيقات محددة.
