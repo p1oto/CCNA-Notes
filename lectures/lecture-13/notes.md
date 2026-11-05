@@ -65,31 +65,44 @@
 <hr>
 
 ### 5. إعداد وتوزيع الآيبيهات تلقائياً (DHCP)
-يمكن تحويل الراوتر لـ DHCP Server لتوزيع الآيبيهات على الأجهزة في الشبكة تلقائياً بدلاً من إدخالها يدوياً (Static).
+يمكن تحويل الراوتر لـ DHCP Server لتوزيع الآيبيهات تلقائياً بدلاً من إدخالها يدوياً (Static).
 
-<strong>أهم أوامر الـ DHCP:</strong>
+<strong>1. حجز مجموعة آيبيهات (استثناء) لعدم توزيعها على الأجهزة:</strong><br>
+<em>(تُكتب في وضع الـ Global Config، مثل آيبيهات الراوتر والسيرفرات)</em>
 </div>
 
-<div dir="ltr" align="left">
-
-```text
-! حجز مجموعة آيبيهات (استثناء) لعدم توزيعها على الأجهزة (مثل آيبيهات الراوتر أو السيرفرات)
+```bash
 Router(config)# ip dhcp excluded-address 192.168.1.1 192.168.1.3
-
-! إنشاء وعاء (Pool) لتوزيع الآيبيهات وتسميته (مثال: fady)
-Router(config)# ip dhcp pool fady
-
-! تحديد الشبكة التي سيتم التوزيع منها مع الـ Subnet Mask
-Router(dhcp-config)# network 192.168.1.0 255.255.255.0
-
-! تحديد الـ Default Gateway (الراوتر) الذي ستأخذه الأجهزة
-Router(dhcp-config)# default-router 192.168.1.1
-
-! تحديد سيرفر الـ DNS (اختياري)
-Router(dhcp-config)# dns-server 8.8.8.8
 ```
 
+<div dir="rtl" align="right">
+<strong>2. إنشاء وعاء (Pool) لتوزيع الآيبيهات وتسميته (مثال: mostafa):</strong>
 </div>
 
+```bash
+Router(config)# ip dhcp pool mostafa
+```
+
 <div dir="rtl" align="right">
-<em>
+<strong>3. تحديد الشبكة التي سيتم التوزيع منها مع الـ Subnet Mask:</strong>
+</div>
+
+```bash
+Router(dhcp-config)# network 192.168.1.0 255.255.255.0
+```
+
+<div dir="rtl" align="right">
+<strong>4. تحديد الـ Default Gateway (الراوتر) الذي ستأخذه الأجهزة:</strong>
+</div>
+
+```bash
+Router(dhcp-config)# default-router 192.168.1.1
+```
+
+<div dir="rtl" align="right">
+<strong>5. تحديد سيرفر الـ DNS (اختياري):</strong>
+</div>
+
+```bash
+Router(dhcp-config)# dns-server 8.8.8.8
+```
